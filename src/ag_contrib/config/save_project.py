@@ -1,9 +1,15 @@
-# import yaml
+import itertools
+import json
+from pathlib import Path
+from typing import TypeVar
+from pydantic import BaseModel, TypeAdapter
+from requests import Response
+import yaml
 
-# try:
-#     from yaml import CLoader as Loader
-# except ImportError:
-#     from yaml import Loader
+try:
+    from yaml import CLoader as Loader
+except ImportError:
+    from yaml import Loader
 
 # from ag_contrib.config.models import (
 #     AGConfig,
@@ -12,134 +18,258 @@
 #     TestCaseConfig,
 #     TestSuiteConfig,
 # )
-# from ag_contrib.http_client import HTTPClient, check_response_status
-# from ag_contrib.utils import get_api_token
+from ag_contrib.config.generated.schema import (
+    AGTestCommandFeedbackConfig,
+    AGTestSuite,
+    AGTestSuiteFeedbackConfig,
+    Course,
+    ExpectedStudentFile,
+    InstructorFile,
+    Project,
+    SandboxDockerImage,
+    UpdateProject,
+)
+from ag_contrib.config.models import AGConfig, TestSuiteConfig
+from ag_contrib.http_client import HTTPClient, check_response_status
+from ag_contrib.utils import get_api_token
 
-# # HACK
-# g_feedback_presets: dict[str, AGTestCommandFeedbackConfig] = {}
+g_feedback_presets: dict[str, AGTestCommandFeedbackConfig] = {}
+g_suite_setup_feedback_presets: dict[str, AGTestSuiteFeedbackConfig] = {}
+
+g_dry_run: bool = True
+
+T = TypeVar("T")
+
+
+def do_get(client: HTTPClient, url: str, response_type: type[T]) -> T:
+    response = client.get(url)
+    check_response_status(response)
+    return response_to_schema_obj(response, response_type)
+
+
+def do_post(client: HTTPClient, url: str, request_body: object, response_type: type[T]) -> T:
+    response = client.post(url, json=request_body)
+    check_response_status(response)
+    return response_to_schema_obj(response, response_type)
+
+
+def do_patch(client: HTTPClient, url: str, request_body: object, response_type: type[T]) -> T:
+    response = client.patch(url, json=request_body)
+    check_response_status(response)
+    return response_to_schema_obj(response, response_type)
+
+
+def response_to_schema_obj(response: Response, class_: type[T]) -> T:
+    return TypeAdapter(class_).validate_python(response.json())
+
+
+def do_get_list(client: HTTPClient, url: str, element_type: type[T]) -> list[T]:
+    response = client.get(url)
+    check_response_status(response)
+    type_adapter = TypeAdapter(element_type)
+    return [type_adapter.validate_python(obj) for obj in response.json()]
+
+
+class _ProjectSaver:
+    student_files: dict[str, ExpectedStudentFile] = {}
+    instructor_files: dict[str, InstructorFile] = {}
+    sandbox_images: dict[str, SandboxDockerImage] = {}
+
+    def __init__(self, config_file: str, *, base_url: str, token_file: str):
+        with open(config_file) as f:
+            self.config = AGConfig.model_validate(yaml.load(f, Loader=Loader))
+
+        self.project_config_dir = Path(config_file).parent
+
+        self.base_url = base_url
+        self.token_file = token_file
+
+        self.client = HTTPClient(get_api_token(token_file), base_url)
+
+        course_data = self.config.project.course
+        self.course = do_get(
+            self.client,
+            f"/api/course/{course_data.name}/{course_data.semester}/{course_data.year}/",
+            Course,
+        )
+
+        projects = do_get_list(
+            self.client,
+            f'/api/courses/{self.course["pk"]}/projects/',
+            Project,
+        )
+        # print(projects)
+
+        self.project = next((p for p in projects if p["name"] == self.config.project.name), None)
+
+    def save_project(self):
+        if self.project is None:
+            print(f"Creating project {self.config.project.name}...")
+            self.project = do_post(
+                self.client,
+                f'/api/courses/{self.course["pk"]}/projects/',
+                self._make_project_request_body(),
+                Project,
+            )
+            print("Project created")
+        else:
+            print(f"Updating project {self.config.project.name} settings...")
+            self.project = do_patch(
+                self.client,
+                f'/api/projects/{self.project["pk"]}/',
+                self._make_project_request_body(),
+                Project,
+            )
+            print("Project settings updated")
+
+        self._save_expected_student_files()
+        self._save_instructor_files()
+        self._load_sandbox_images()
+        pass
+
+    def _make_project_request_body(self):
+        return {"name": self.config.project.name} | json.loads(
+                self.config.project.settings.model_dump_json(
+                exclude_unset=True,
+                by_alias=True,
+            )
+        )
+
+    def _save_expected_student_files(self):
+        assert self.project is not None
+
+        print("Checking student files")
+        file_list = do_get_list(
+            self.client,
+            f'/api/projects/{self.project["pk"]}/expected_student_files/',
+            ExpectedStudentFile,
+        )
+        self.student_files = {item["pattern"]: item for item in file_list}
+
+        for student_file_config in self.config.project.student_files:
+            pattern = student_file_config["pattern"]
+            print("* Checking", pattern, "...")
+            if student_file_config["pattern"] in self.student_files:
+                response = self.client.patch(
+                    f'/api/expected_student_files/{self.student_files[pattern]["pk"]}/',
+                    json=student_file_config,
+                )
+                check_response_status(response)
+                print("  Updated", pattern)
+            else:
+                response = self.client.post(
+                    f'/api/projects/{self.project["pk"]}/expected_student_files/',
+                    json=student_file_config,
+                )
+                check_response_status(response)
+                print("  Created", pattern)
+
+    def _save_instructor_files(self):
+        assert self.project is not None
+
+        print("Checking instructor files...")
+        file_list = do_get_list(
+            self.client,
+            f'/api/projects/{self.project["pk"]}/instructor_files/',
+            InstructorFile,
+        )
+        self.instructor_files = {item["name"]: item for item in file_list}
+
+        for file_config in self.config.project.instructor_files:
+            print("* Checking", file_config.name, "...")
+            if file_config.name in self.instructor_files:
+                with open(self.project_config_dir / file_config.local_path, "rb") as f:
+                    response = self.client.put(
+                        f'/api/instructor_files/{self.instructor_files[file_config.name]["pk"]}/content/',
+                        files={"file_obj": f},
+                    )
+                check_response_status(response)
+                print("  Updated", file_config.name, "from", file_config.local_path)
+            else:
+                with open(self.project_config_dir / file_config.local_path, "rb") as f:
+                    response = self.client.post(
+                        f'/api/projects/{self.project["pk"]}/instructor_files/',
+                        files={"file_obj": f},
+                    )
+                check_response_status(response)
+                print("  Created", file_config.name, "from", file_config.local_path)
+
+    def _load_sandbox_images(self):
+        print("Loading sandbox images...")
+        global_sandbox_images = do_get_list(
+            self.client,
+            f"/api/sandbox_docker_images/",
+            SandboxDockerImage,
+        )
+        course_sandbox_images = do_get_list(
+            self.client,
+            f'/api/courses/{self.course["pk"]}/sandbox_docker_images/',
+            SandboxDockerImage,
+        )
+
+        self.sandbox_images = {
+            image["display_name"]: image
+            for image in itertools.chain(global_sandbox_images, course_sandbox_images)
+        }
+        print("\n".join(self.sandbox_images))
+
+    def _save_test_suites(self):
+        assert self.project is not None
+
+        print("Checking test suites")
+        test_suites = do_get_list(
+            self.client,
+            f'/api/projects/{self.project["pk"]}/ag_test_suites/',
+            AGTestSuite,
+        )
+        test_suites = {item["name"]: item for item in test_suites}
+
+        for suite_data in self.config.project.test_suites:
+            print("* Checking test suite", suite_data.name, "...")
+            if suite_data.name in test_suites:
+                response = self.client.patch(
+                    f'/api/ag_test_suites/{test_suites[suite_data.name]["pk"]}/',
+                    json=self._make_save_test_suite_request_body(suite_data),
+                )
+                check_response_status(response)
+                print("  Updated", suite_data.name)
+            else:
+                response = self.client.post(
+                    f'/api/projects/{self.project["pk"]}/ag_test_suites/',
+                    json=self._make_save_test_suite_request_body(suite_data),
+                )
+                check_response_status(response)
+                test_suites[suite_data.name] = response.json()
+                print("  Created", suite_data.name)
+
+    def _make_save_test_suite_request_body(self, suite_data: TestSuiteConfig):
+        return suite_data.model_dump(
+            exclude={"test_cases"},
+            exclude_unset=True,
+        ) | {
+            "sandbox_docker_image": self.sandbox_images[suite_data.sandbox_docker_image],
+            "student_files_needed": [
+                self.student_files[pattern] for pattern in suite_data.student_files_needed
+            ],
+            "instructor_files_needed": [
+                self.instructor_files[name] for name in suite_data.instructor_files_needed
+            ],
+            "normal_fdbk_config": get_suite_setup_fdbk_conf(suite_data.normal_fdbk_config),
+            "ultimate_submission_fdbk_config": get_suite_setup_fdbk_conf(
+                suite_data.ultimate_submission_fdbk_config
+            ),
+            "past_limit_submission_fdbk_config": get_suite_setup_fdbk_conf(
+                suite_data.past_limit_submission_fdbk_config
+            ),
+            "staff_viewer_fdbk_config": get_suite_setup_fdbk_conf(
+                suite_data.staff_viewer_fdbk_config
+            ),
+        }
 
 
 def save_project(config_file: str, *, base_url: str, token_file: str):
-    pass
-# def save_project(config_file: str, *, base_url: str, token_file: str):
-#     with open(config_file) as f:
-#         config = AGConfig.model_validate(yaml.load(f, Loader=Loader))
+    _ProjectSaver(config_file, base_url=base_url, token_file=token_file).save_project()
 
-#     global g_feedback_presets
-#     g_feedback_presets = config.feedback_presets
-
-#     client = HTTPClient(get_api_token(token_file), base_url)
-
-#     course_data = config.project.course
-#     course_response = client.get(
-#         f"/api/course/{course_data.name}/{course_data.semester.value}/{course_data.year}/"
-#     )
-#     check_response_status(course_response)
-#     course = course_response.json()
-
-#     projects_response = client.get(f'/api/courses/{course["pk"]}/projects/')
-#     check_response_status(projects_response)
-#     projects = projects_response.json()
-#     # print(projects)
-
-#     project = next((p for p in projects if p["name"] == config.project.settings.name), None)
-#     if project is None:
-#         print(f"Creating project {config.project.settings.name}...")
-#         response = client.post(
-#             f'/api/courses/{course["pk"]}/projects/', json={"name": config.project.settings.name}
-#         )
-#         check_response_status(response)
-#         project = response.json()
-#         print("Project created")
-
-#     print("Checking instructor files...")
-#     instructor_files_response = client.get(f'/api/projects/{project["pk"]}/instructor_files/')
-#     check_response_status(instructor_files_response)
-#     instructor_files = {item["name"]: item for item in instructor_files_response.json()}
-
-#     for file_config in config.project.instructor_files:
-#         print("* Checking", file_config.name, "...")
-#         if file_config.name in instructor_files:
-#             response = client.put(
-#                 f'/api/instructor_files/{instructor_files[file_config.name]["pk"]}/content/',
-#                 files={"file_obj": open(file_config.local_path, "rb")},
-#             )
-#             check_response_status(response)
-#             print("  Updated", file_config.name, "from", file_config.local_path)
-#         else:
-#             response = client.post(
-#                 f'/api/projects/{project["pk"]}/instructor_files/',
-#                 files={"file_obj": open(file_config.local_path, "rb")},
-#             )
-#             check_response_status(response)
-#             print("  Created", file_config.name, "from", file_config.local_path)
-
-#     print("Checking student files")
-#     student_files_response = client.get(f'/api/projects/{project["pk"]}/expected_student_files/')
-#     check_response_status(student_files_response)
-#     student_files = {item["pattern"]: item for item in student_files_response.json()}
-
-#     for student_file_config in config.project.student_files:
-#         print("* Checking", student_file_config.pattern, "...")
-#         if student_file_config.pattern in student_files:
-#             response = client.patch(
-#                 f'/api/expected_student_files/{student_files[student_file_config.pattern]["pk"]}/',
-#                 json=student_file_config.model_dump(exclude_unset=True),
-#             )
-#             check_response_status(response)
-#             print("  Updated", student_file_config.pattern)
-#         else:
-#             response = client.post(
-#                 f'/api/projects/{project["pk"]}/expected_student_files/',
-#                 json=student_file_config.model_dump(exclude_unset=True),
-#             )
-#             check_response_status(response)
-#             print("  Created", student_file_config.pattern)
-
-#     print("Checking test suites")
-#     test_suites_response = client.get(f'/api/projects/{project["pk"]}/ag_test_suites/')
-#     check_response_status(test_suites_response)
-#     test_suites = {item["name"]: item for item in test_suites_response.json()}
-
-#     for suite_data in config.project.test_suites:
-#         print("* Checking test suite", suite_data.name, "...")
-#         if suite_data.name in test_suites:
-#             response = client.patch(
-#                 f'/api/ag_test_suites/{test_suites[suite_data.name]["pk"]}/',
-#                 json=suite_data.model_dump(
-#                     exclude_unset=True,
-#                     exclude={"test_cases", "student_files_needed", "instructor_files_needed"},
-#                 )
-#                 | {
-#                     "student_files_needed": [
-#                         student_files[pattern] for pattern in suite_data.student_files_needed
-#                     ],
-#                     "instructor_files_needed": [
-#                         instructor_files[name] for name in suite_data.instructor_files_needed
-#                     ],
-#                 },
-#             )
-#             check_response_status(response)
-#             print("  Updated", suite_data.name)
-#         else:
-#             response = client.post(
-#                 f'/api/projects/{project["pk"]}/ag_test_suites/',
-#                 json=suite_data.model_dump(
-#                     exclude_unset=True,
-#                     exclude={"test_cases", "student_files_needed", "instructor_files_needed"},
-#                 )
-#                 | {
-#                     "student_files_needed": [
-#                         student_files[pattern] for pattern in suite_data.student_files_needed
-#                     ],
-#                     "instructor_files_needed": [
-#                         instructor_files[name] for name in suite_data.instructor_files_needed
-#                     ],
-#                 },
-#             )
-#             check_response_status(response)
-#             test_suites[suite_data.name] = response.json()
-#             print("  Created", suite_data.name)
 
 #         test_cases = {test["name"]: test for test in test_suites[suite_data.name]["ag_test_cases"]}
 #         for test_data in suite_data.test_cases:
@@ -171,16 +301,27 @@ def save_project(config_file: str, *, base_url: str, token_file: str):
 #     return instr_files[name]
 
 
-# def get_fdbk_conf(val: str | AGTestCommandFeedbackConfig | None) -> dict | None:
-#     if val is None:
-#         return None
+def get_fdbk_conf(
+    val: str | AGTestCommandFeedbackConfig | None,
+) -> AGTestCommandFeedbackConfig | None:
+    if val is None:
+        return None
 
-#     if isinstance(val, str):
-#         if val not in g_feedback_presets:
-#             print(f'Feedback preset "{val}" not found.')
-#         return g_feedback_presets[val].model_dump(mode="json")
+    if isinstance(val, str):
+        if val not in g_feedback_presets:
+            print(f'Feedback preset "{val}" not found.')
+        return g_feedback_presets[val]
 
-#     return val
+    return val
+
+
+def get_suite_setup_fdbk_conf(val: str | AGTestSuiteFeedbackConfig) -> AGTestSuiteFeedbackConfig:
+    if isinstance(val, str):
+        if val not in g_suite_setup_feedback_presets:
+            print(f'Suite setup feedback preset "{val}" not found')
+        return g_suite_setup_feedback_presets[val]
+
+    return val
 
 
 # def create_or_update_test(

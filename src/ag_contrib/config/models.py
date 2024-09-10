@@ -1,5 +1,6 @@
 from __future__ import annotations
 import datetime
+import itertools
 
 from pathlib import Path
 from typing import Literal
@@ -7,6 +8,10 @@ from typing import Literal
 from pydantic import BaseModel, Field
 
 from ag_contrib.config.generated import schema as ag_schema
+
+
+class AGConfigError(Exception):
+    pass
 
 
 class AGConfig(BaseModel):
@@ -36,14 +41,13 @@ class CourseSelection(BaseModel):
 
 
 class ProjectSettings(BaseModel):
-    soft_closing_time: datetime.datetime | None = (
-        datetime.datetime.now().astimezone().replace(minute=0, second=0, microsecond=0)
-        + datetime.timedelta(days=7)
-    )
+    soft_closing_time: datetime.datetime | None = datetime.datetime.now().astimezone().replace(
+        minute=0, second=0, microsecond=0
+    ) + datetime.timedelta(days=7)
     closing_time: datetime.datetime | None = datetime.datetime.now().astimezone().replace(
         minute=0, second=0, microsecond=0
     ) + datetime.timedelta(days=7)
-    anyone_with_link_can_submit: bool = False
+    anyone_with_link_can_submit: bool = Field(False, alias="guests_can_submit")
     min_group_size: int = 1
     max_group_size: int = 1
     submission_limit_per_day: int | None = None
@@ -54,8 +58,10 @@ class ProjectSettings(BaseModel):
     num_bonus_submissions: int = 0
     total_submission_limit: int | None = None
     allow_late_days: bool = False
-    final_graded_submission: Literal["most_recent", "best"] = "most_recent"
-    hide_final_graded_submission_fdbk: bool = False
+    final_graded_submission_policy: Literal["most_recent", "best"] = Field(
+        "most_recent", alias="ultimate_submission_policy"
+    )
+    hide_final_graded_submission_fdbk: bool = Field(False, alias="hide_ultimate_submission_fdbk")
     send_email_on_submission_received: bool = False
     send_email_on_non_deferred_tests_finished: bool = False
     use_honor_pledge: bool = False
@@ -122,20 +128,23 @@ class MultiCmdTestCaseConfig(BaseModel):
                     command.name = apply_substitutions(command.name, substitution)
                     command.cmd = apply_substitutions(command.cmd, substitution)
 
-                    if '__ag_points_for_correct_return_code' in substitution:
-                        command.points_for_correct_return_code = substitution['__ag_points_for_correct_return_code']
+                    command.return_code.points_for_correct_return_code = apply_points_substitution(
+                        command.return_code.points_for_correct_return_code, substitution
+                    )
+                    command.output_diff.points_for_correct_stdout = apply_points_substitution(
+                        command.output_diff.points_for_correct_stdout, substitution
+                    )
+                    command.output_diff.points_for_correct_stderr = apply_points_substitution(
+                        command.output_diff.points_for_correct_stderr, substitution
+                    )
 
-                    if '__ag_points_for_correct_stdout' in substitution:
-                        command.points_for_correct_stdout = substitution['__ag_points_for_correct_stdout']
+                new_test.commands = list(
+                    itertools.chain(*[cmd.do_repeat() for cmd in new_test.commands])
+                )
 
-                    if '__ag_points_for_correct_stderr' in substitution:
-                        command.points_for_correct_stderr = substitution['__ag_points_for_correct_stderr']
+                new_tests.append(new_test)
 
-                new_test.commands = [cmd.do_repeat() for cmd in new_test.commands]
-
-                # new_tests.append(new_test)
-
-        raise NotImplementedError
+        return new_tests
 
     def to_json(self) -> ag_schema.AGTestCase:
         raise NotImplementedError
@@ -145,18 +154,22 @@ class TestCaseAdvancedFdbkConfig(BaseModel):
     normal_fdbk_config: ag_schema.AGTestCaseFeedbackConfig = {
         "visible": True,
         "show_individual_commands": True,
+        "show_student_description": True,
     }
     ultimate_submission_fdbk_config: ag_schema.AGTestCaseFeedbackConfig = {
         "visible": True,
         "show_individual_commands": True,
+        "show_student_description": True,
     }
     past_limit_submission_fdbk_config: ag_schema.AGTestCaseFeedbackConfig = {
         "visible": True,
         "show_individual_commands": True,
+        "show_student_description": True,
     }
     staff_viewer_fdbk_config: ag_schema.AGTestCaseFeedbackConfig = {
         "visible": True,
         "show_individual_commands": True,
+        "show_student_description": True,
     }
 
 
@@ -173,6 +186,9 @@ class MultiCommandConfig(BaseModel):
     resources: ResourceLimits = Field(default_factory=lambda: ResourceLimits())
 
     repeat: list[dict[str, object]] = []
+
+    def do_repeat(self) -> list[MultiCommandConfig]:
+        raise NotImplementedError
 
 
 class SingleCmdTestCaseConfig(BaseModel):
@@ -198,16 +214,17 @@ class SingleCmdTestCaseConfig(BaseModel):
         for substitution in self.repeat:
             new_test = self.model_copy(deep=True)
             new_test.name = apply_substitutions(new_test.name, substitution)
-            new_test.command = apply_substitutions(new_test.name, substitution)
+            new_test.cmd = apply_substitutions(new_test.name, substitution)
 
-            if '__ag_points_for_correct_return_code' in substitution:
-                new_test.points_for_correct_return_code = substitution['__ag_points_for_correct_return_code']
-
-            if '__ag_points_for_correct_stdout' in substitution:
-                new_test.points_for_correct_stdout = substitution['__ag_points_for_correct_stdout']
-
-            if '__ag_points_for_correct_stderr' in substitution:
-                new_test.points_for_correct_stderr = substitution['__ag_points_for_correct_stderr']
+            new_test.return_code.points_for_correct_return_code = apply_points_substitution(
+                new_test.return_code.points_for_correct_return_code, substitution
+            )
+            new_test.output_diff.points_for_correct_stdout = apply_points_substitution(
+                new_test.output_diff.points_for_correct_stdout, substitution
+            )
+            new_test.output_diff.points_for_correct_stderr = apply_points_substitution(
+                new_test.output_diff.points_for_correct_stderr, substitution
+            )
 
             new_tests.append(new_test)
 
@@ -224,6 +241,27 @@ def apply_substitutions(string: str, sub: dict[str, object]) -> str:
     return string
 
 
+def apply_points_substitution(original_points_val: str | int, sub: dict[str, object]) -> int:
+    if isinstance(original_points_val, int):
+        return original_points_val
+
+    if original_points_val not in sub:
+        raise PointsSubstitutionError(f'Repeater key "{original_points_val}" not found.')
+
+    sub_value = sub[original_points_val]
+    if not isinstance(sub_value, int):
+        raise PointsSubstitutionError(
+            "Point value substitutions must be an integer, "
+            f'but got type "{type(original_points_val)}"'
+        )
+
+    return sub_value
+
+
+class PointsSubstitutionError(AGConfigError):
+    pass
+
+
 class StdinSettings(BaseModel):
     stdin_source: ag_schema.StdinSource = "none"
     stdin_text: str = ""
@@ -238,7 +276,7 @@ class MultiCmdReturnCodeCheckSettings(BaseModel):
 
 class SingleCmdReturnCodeCheckSettings(BaseModel):
     expected_return_code: ag_schema.ExpectedReturnCode = "none"
-    points_for_correct_return_code: int = 0
+    points_for_correct_return_code: int | str = 0
 
 
 class MultiCmdDiffSettings(BaseModel):
@@ -264,12 +302,12 @@ class SingleCmdDiffSettings(BaseModel):
     expected_stdout_source: ag_schema.ExpectedOutputSource = "none"
     expected_stdout_text: str = ""
     expected_stdout_instructor_file: str | None = None
-    points_for_correct_stdout: int = 0
+    points_for_correct_stdout: int | str = 0
 
     expected_stderr_source: ag_schema.ExpectedOutputSource = "none"
     expected_stderr_text: str = ""
     expected_stderr_instructor_file: str | None = None
-    points_for_correct_stderr: int = 0
+    points_for_correct_stderr: int | str = 0
 
     ignore_case: bool = False
     ignore_whitespace: bool = False
@@ -295,6 +333,7 @@ BUILTIN_TEST_SUITE_FDBK_PRESETS = {
     "public": ag_schema.AGTestSuiteFeedbackConfig(
         visible=True,
         show_individual_tests=True,
+        show_student_description=True,
         show_setup_return_code=True,
         show_setup_timed_out=True,
         show_setup_stdout=True,
@@ -303,6 +342,7 @@ BUILTIN_TEST_SUITE_FDBK_PRESETS = {
     "pass/fail": ag_schema.AGTestSuiteFeedbackConfig(
         visible=True,
         show_individual_tests=True,
+        show_student_description=True,
         show_setup_return_code=True,
         show_setup_timed_out=True,
         show_setup_stdout=False,
@@ -311,6 +351,7 @@ BUILTIN_TEST_SUITE_FDBK_PRESETS = {
     "private": ag_schema.AGTestSuiteFeedbackConfig(
         visible=True,
         show_individual_tests=True,
+        show_student_description=False,
         show_setup_return_code=False,
         show_setup_timed_out=False,
         show_setup_stdout=False,
@@ -322,6 +363,7 @@ BUILTIN_TEST_SUITE_FDBK_PRESETS = {
 BUILTIN_CMD_FDBK_PRESETS = {
     "pass/fail": ag_schema.AGTestCommandFeedbackConfig(
         visible=True,
+        show_student_description=True,
         return_code_fdbk_level="correct_or_incorrect",
         stdout_fdbk_level="correct_or_incorrect",
         stderr_fdbk_level="correct_or_incorrect",
@@ -333,6 +375,7 @@ BUILTIN_CMD_FDBK_PRESETS = {
     ),
     "pass/fail+timeout": ag_schema.AGTestCommandFeedbackConfig(
         visible=True,
+        show_student_description=True,
         return_code_fdbk_level="correct_or_incorrect",
         stdout_fdbk_level="correct_or_incorrect",
         stderr_fdbk_level="correct_or_incorrect",
@@ -344,6 +387,7 @@ BUILTIN_CMD_FDBK_PRESETS = {
     ),
     "pass/fail+exit_status": ag_schema.AGTestCommandFeedbackConfig(
         visible=True,
+        show_student_description=True,
         return_code_fdbk_level="correct_or_incorrect",
         stdout_fdbk_level="correct_or_incorrect",
         stderr_fdbk_level="correct_or_incorrect",
@@ -355,6 +399,7 @@ BUILTIN_CMD_FDBK_PRESETS = {
     ),
     "pass/fail+output": ag_schema.AGTestCommandFeedbackConfig(
         visible=True,
+        show_student_description=True,
         return_code_fdbk_level="correct_or_incorrect",
         stdout_fdbk_level="correct_or_incorrect",
         stderr_fdbk_level="correct_or_incorrect",
@@ -366,6 +411,7 @@ BUILTIN_CMD_FDBK_PRESETS = {
     ),
     "pass/fail+diff": ag_schema.AGTestCommandFeedbackConfig(
         visible=True,
+        show_student_description=True,
         return_code_fdbk_level="correct_or_incorrect",
         stdout_fdbk_level="expected_and_actual",
         stderr_fdbk_level="expected_and_actual",
@@ -377,6 +423,7 @@ BUILTIN_CMD_FDBK_PRESETS = {
     ),
     "private": ag_schema.AGTestCommandFeedbackConfig(
         visible=True,
+        show_student_description=False,
         return_code_fdbk_level="no_feedback",
         stdout_fdbk_level="no_feedback",
         stderr_fdbk_level="no_feedback",
@@ -388,6 +435,7 @@ BUILTIN_CMD_FDBK_PRESETS = {
     ),
     "public": ag_schema.AGTestCommandFeedbackConfig(
         visible=True,
+        show_student_description=True,
         return_code_fdbk_level="expected_and_actual",
         stdout_fdbk_level="expected_and_actual",
         stderr_fdbk_level="expected_and_actual",

@@ -24,7 +24,6 @@ def init_project(
     **kwargs: object,
 ):
     project = ProjectConfig(
-        # FIXME: Make a project settings and course settings model
         name=project_name,
         course=CourseSelection(name=course_name, semester=course_term, year=course_year),
         student_files=[
@@ -32,7 +31,7 @@ def init_project(
                 pattern="hello.py", min_num_matches=1, max_num_matches=1
             )
         ],
-        instructor_files=[InstructorFileConfig(local_path=Path("tests.py"))],
+        instructor_files=[InstructorFileConfig(local_path=Path("instructor_file.txt"))],
         test_suites=[
             TestSuiteConfig(
                 name="Suite 1",
@@ -49,3 +48,12 @@ def init_project(
 
     with open(config_file, "w") as f:
         yaml.dump(AGConfig(project=project).model_dump(mode="json"), f, sort_keys=False)
+
+    blank_instructor_file = Path(config_file).parent / Path("instructor_file.txt")
+    print(blank_instructor_file)
+    if not blank_instructor_file.exists():
+        with open(blank_instructor_file, "w") as f:
+            f.write(
+                "This is a file written and uploaded by the instructor. "
+                "It might contain test cases or other contents needed by tests.\n"
+            )

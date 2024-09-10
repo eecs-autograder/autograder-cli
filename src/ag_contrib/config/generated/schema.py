@@ -137,6 +137,10 @@ class CreateInstructorFile(TypedDict):
     file_obj: NotRequired[bytes]
 
 
+class UpdateInstructorFile(TypedDict):
+    file_obj: NotRequired[bytes]
+
+
 class DownloadTask(TypedDict):
     pk: int
     project: int
@@ -177,6 +181,12 @@ class Group(TypedDict):
 
 class CreateGroup(TypedDict):
     member_names: Sequence[str]
+
+
+class UpdateGroup(TypedDict):
+    member_names: NotRequired[Sequence[str]]
+    extended_due_date: NotRequired[str | None]
+    bonus_submissions_remaining: NotRequired[int]
 
 
 class GroupInvitation(TypedDict):
@@ -223,6 +233,10 @@ class Submission(TypedDict):
 
 class CreateSubmission(TypedDict):
     submitted_files: Sequence[bytes]
+
+
+class UpdateSubmission(TypedDict):
+    count_towards_total_limit: NotRequired[bool]
 
 
 class Command(TypedDict):
@@ -279,11 +293,13 @@ class AGTestSuiteFeedbackConfig(TypedDict):
     show_setup_timed_out: bool
     show_setup_stdout: bool
     show_setup_stderr: bool
+    show_student_description: bool
 
 
 class AGTestCaseFeedbackConfig(TypedDict):
     visible: bool
     show_individual_commands: bool
+    show_student_description: bool
 
 
 StdinSource = Literal['none', 'text', 'instructor_file', 'setup_stdout', 'setup_stderr']
@@ -303,6 +319,8 @@ class AGTestCommandResultFeedback(TypedDict):
     ag_test_command_pk: int
     ag_test_command_name: str
     fdbk_settings: Mapping[str, Any]
+    student_description: str | None
+    student_on_fail_description: str | None
     timed_out: bool | None
     return_code_correct: bool | None
     expected_return_code: ExpectedReturnCode | None
@@ -461,8 +479,16 @@ class CriterionResult(TypedDict):
     handgrading_result: int
 
 
+class CreateCriterionResult(TypedDict):
+    selected: bool
+
+
 class UpdateCriterionResult(TypedDict):
     selected: NotRequired[bool]
+
+
+class UpdateComment(TypedDict):
+    text: NotRequired[str]
 
 
 class Location(TypedDict):
@@ -561,6 +587,9 @@ class Project(TypedDict):
 
 class CreateAGTestSuite(TypedDict):
     name: str
+    internal_admin_notes: NotRequired[str]
+    staff_description: NotRequired[str]
+    student_description: NotRequired[str]
     instructor_files_needed: NotRequired[Sequence[InstructorFile]]
     read_only_instructor_files: NotRequired[bool]
     student_files_needed: NotRequired[Sequence[ExpectedStudentFile]]
@@ -578,6 +607,9 @@ class CreateAGTestSuite(TypedDict):
 
 class UpdateAGTestSuite(TypedDict):
     name: NotRequired[str]
+    internal_admin_notes: NotRequired[str]
+    staff_description: NotRequired[str]
+    student_description: NotRequired[str]
     instructor_files_needed: NotRequired[Sequence[InstructorFile]]
     read_only_instructor_files: NotRequired[bool]
     student_files_needed: NotRequired[Sequence[ExpectedStudentFile]]
@@ -596,6 +628,9 @@ class UpdateAGTestSuite(TypedDict):
 class CreateAGTestCase(TypedDict):
     name: str
     ag_test_suite: NotRequired[int]
+    internal_admin_notes: NotRequired[str]
+    staff_description: NotRequired[str]
+    student_description: NotRequired[str]
     normal_fdbk_config: NotRequired[AGTestCaseFeedbackConfig]
     ultimate_submission_fdbk_config: NotRequired[AGTestCaseFeedbackConfig]
     past_limit_submission_fdbk_config: NotRequired[AGTestCaseFeedbackConfig]
@@ -605,6 +640,9 @@ class CreateAGTestCase(TypedDict):
 class UpdateAGTestCase(TypedDict):
     name: NotRequired[str]
     ag_test_suite: NotRequired[int]
+    internal_admin_notes: NotRequired[str]
+    staff_description: NotRequired[str]
+    student_description: NotRequired[str]
     normal_fdbk_config: NotRequired[AGTestCaseFeedbackConfig]
     ultimate_submission_fdbk_config: NotRequired[AGTestCaseFeedbackConfig]
     past_limit_submission_fdbk_config: NotRequired[AGTestCaseFeedbackConfig]
@@ -621,6 +659,7 @@ class AGTestCommandFeedbackConfig(TypedDict):
     show_actual_stdout: bool
     show_actual_stderr: bool
     show_whether_timed_out: bool
+    show_student_description: bool
 
 
 class AGTestCaseResultFeedback(TypedDict):
@@ -628,6 +667,7 @@ class AGTestCaseResultFeedback(TypedDict):
     ag_test_case_name: str
     ag_test_case_pk: int
     fdbk_settings: Mapping[str, Any]
+    student_description: str | None
     total_points: int
     total_points_possible: int
     ag_test_command_results: Sequence[AGTestCommandResultFeedback]
@@ -696,6 +736,10 @@ class AGTestCommand(TypedDict):
     ag_test_case: int
     last_modified: str
     cmd: str
+    internal_admin_notes: str
+    staff_description: str
+    student_description: str
+    student_on_fail_description: str
     stdin_source: Literal['none', 'text', 'instructor_file', 'setup_stdout', 'setup_stderr']
     stdin_text: str
     stdin_instructor_file: InstructorFile | None
@@ -730,6 +774,10 @@ class AGTestCommand(TypedDict):
 class CreateAGTestCommand(TypedDict):
     name: str
     cmd: str
+    internal_admin_notes: NotRequired[str]
+    staff_description: NotRequired[str]
+    student_description: NotRequired[str]
+    student_on_fail_description: NotRequired[str]
     stdin_source: NotRequired[
         Literal['none', 'text', 'instructor_file', 'setup_stdout', 'setup_stderr']
     ]
@@ -766,6 +814,10 @@ class CreateAGTestCommand(TypedDict):
 class UpdateAGTestCommand(TypedDict):
     name: NotRequired[str]
     cmd: NotRequired[str]
+    internal_admin_notes: NotRequired[str]
+    staff_description: NotRequired[str]
+    student_description: NotRequired[str]
+    student_on_fail_description: NotRequired[str]
     stdin_source: NotRequired[
         Literal['none', 'text', 'instructor_file', 'setup_stdout', 'setup_stderr']
     ]
@@ -804,6 +856,7 @@ class AGTestSuiteResultFeedback(TypedDict):
     ag_test_suite_name: str
     ag_test_suite_pk: int
     fdbk_settings: Mapping[str, Any]
+    student_description: str | None
     total_points: int
     total_points_possible: int
     setup_name: str | None
@@ -907,6 +960,9 @@ class AGTestCase(TypedDict):
     pk: int
     name: str
     last_modified: str
+    internal_admin_notes: str
+    staff_description: str
+    student_description: str
     ag_test_suite: int
     ag_test_commands: Sequence[AGTestCommand]
     normal_fdbk_config: AGTestCaseFeedbackConfig
@@ -932,6 +988,9 @@ class AGTestSuite(TypedDict):
     name: str
     project: int
     last_modified: str
+    internal_admin_notes: str
+    staff_description: str
+    student_description: str
     instructor_files_needed: Sequence[InstructorFile]
     read_only_instructor_files: bool
     student_files_needed: Sequence[ExpectedStudentFile]

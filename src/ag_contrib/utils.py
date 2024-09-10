@@ -1,8 +1,5 @@
-import copy
 import os
 from typing import Iterator
-
-import requests
 
 
 def get_api_token(token_filename: str) -> str:
