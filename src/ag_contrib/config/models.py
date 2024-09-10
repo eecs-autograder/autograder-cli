@@ -3,7 +3,7 @@ import datetime
 import itertools
 
 from pathlib import Path
-from typing import Literal
+from typing import Annotated, Literal
 
 from pydantic import BaseModel, Field
 
@@ -47,7 +47,7 @@ class ProjectSettings(BaseModel):
     closing_time: datetime.datetime | None = datetime.datetime.now().astimezone().replace(
         minute=0, second=0, microsecond=0
     ) + datetime.timedelta(days=7)
-    anyone_with_link_can_submit: bool = Field(False, alias="guests_can_submit")
+    anyone_with_link_can_submit: Annotated[bool, Field(alias="guests_can_submit")] = False
     min_group_size: int = 1
     max_group_size: int = 1
     submission_limit_per_day: int | None = None
@@ -58,10 +58,12 @@ class ProjectSettings(BaseModel):
     num_bonus_submissions: int = 0
     total_submission_limit: int | None = None
     allow_late_days: bool = False
-    final_graded_submission_policy: Literal["most_recent", "best"] = Field(
-        "most_recent", alias="ultimate_submission_policy"
-    )
-    hide_final_graded_submission_fdbk: bool = Field(False, alias="hide_ultimate_submission_fdbk")
+    final_graded_submission_policy: Annotated[
+        Literal["most_recent", "best"], Field(alias="ultimate_submission_policy")
+    ] = "most_recent"
+    hide_final_graded_submission_fdbk: Annotated[
+        bool, Field(alias="hide_ultimate_submission_fdbk")
+    ] = False
     send_email_on_submission_received: bool = False
     send_email_on_non_deferred_tests_finished: bool = False
     use_honor_pledge: bool = False

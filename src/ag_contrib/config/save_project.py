@@ -2,7 +2,7 @@ import itertools
 import json
 from pathlib import Path
 from typing import TypeVar
-from pydantic import BaseModel, TypeAdapter
+from pydantic import TypeAdapter
 from requests import Response
 import yaml
 
@@ -27,47 +27,16 @@ from ag_contrib.config.generated.schema import (
     InstructorFile,
     Project,
     SandboxDockerImage,
-    UpdateProject,
 )
 from ag_contrib.config.models import AGConfig, TestSuiteConfig
 from ag_contrib.http_client import HTTPClient, check_response_status
 from ag_contrib.utils import get_api_token
 
-g_feedback_presets: dict[str, AGTestCommandFeedbackConfig] = {}
-g_suite_setup_feedback_presets: dict[str, AGTestSuiteFeedbackConfig] = {}
-
 g_dry_run: bool = True
 
-T = TypeVar("T")
 
-
-def do_get(client: HTTPClient, url: str, response_type: type[T]) -> T:
-    response = client.get(url)
-    check_response_status(response)
-    return response_to_schema_obj(response, response_type)
-
-
-def do_post(client: HTTPClient, url: str, request_body: object, response_type: type[T]) -> T:
-    response = client.post(url, json=request_body)
-    check_response_status(response)
-    return response_to_schema_obj(response, response_type)
-
-
-def do_patch(client: HTTPClient, url: str, request_body: object, response_type: type[T]) -> T:
-    response = client.patch(url, json=request_body)
-    check_response_status(response)
-    return response_to_schema_obj(response, response_type)
-
-
-def response_to_schema_obj(response: Response, class_: type[T]) -> T:
-    return TypeAdapter(class_).validate_python(response.json())
-
-
-def do_get_list(client: HTTPClient, url: str, element_type: type[T]) -> list[T]:
-    response = client.get(url)
-    check_response_status(response)
-    type_adapter = TypeAdapter(element_type)
-    return [type_adapter.validate_python(obj) for obj in response.json()]
+def save_project(config_file: str, *, base_url: str, token_file: str):
+    _ProjectSaver(config_file, base_url=base_url, token_file=token_file).save_project()
 
 
 class _ProjectSaver:
@@ -129,7 +98,7 @@ class _ProjectSaver:
 
     def _make_project_request_body(self):
         return {"name": self.config.project.name} | json.loads(
-                self.config.project.settings.model_dump_json(
+            self.config.project.settings.model_dump_json(
                 exclude_unset=True,
                 by_alias=True,
             )
@@ -254,21 +223,41 @@ class _ProjectSaver:
             "instructor_files_needed": [
                 self.instructor_files[name] for name in suite_data.instructor_files_needed
             ],
-            "normal_fdbk_config": get_suite_setup_fdbk_conf(suite_data.normal_fdbk_config),
-            "ultimate_submission_fdbk_config": get_suite_setup_fdbk_conf(
+            "normal_fdbk_config": self.get_suite_setup_fdbk_conf(suite_data.normal_fdbk_config),
+            "ultimate_submission_fdbk_config": self.get_suite_setup_fdbk_conf(
                 suite_data.ultimate_submission_fdbk_config
             ),
-            "past_limit_submission_fdbk_config": get_suite_setup_fdbk_conf(
+            "past_limit_submission_fdbk_config": self.get_suite_setup_fdbk_conf(
                 suite_data.past_limit_submission_fdbk_config
             ),
-            "staff_viewer_fdbk_config": get_suite_setup_fdbk_conf(
+            "staff_viewer_fdbk_config": self.get_suite_setup_fdbk_conf(
                 suite_data.staff_viewer_fdbk_config
             ),
         }
 
+    def get_suite_setup_fdbk_conf(
+        self, val: str | AGTestSuiteFeedbackConfig
+    ) -> AGTestSuiteFeedbackConfig:
+        if isinstance(val, str):
+            if val not in self.config.feedback_presets_test_suite_setup:
+                print(f'Suite setup feedback preset "{val}" not found')
+            return self.config.feedback_presets_test_suite_setup[val]
 
-def save_project(config_file: str, *, base_url: str, token_file: str):
-    _ProjectSaver(config_file, base_url=base_url, token_file=token_file).save_project()
+        return val
+
+    def get_fdbk_conf(
+        self,
+        val: str | AGTestCommandFeedbackConfig | None,
+    ) -> AGTestCommandFeedbackConfig | None:
+        if val is None:
+            return None
+
+        if isinstance(val, str):
+            if val not in self.config.feedback_presets:
+                print(f'Feedback preset "{val}" not found.')
+            return self.config.feedback_presets[val]
+
+        return val
 
 
 #         test_cases = {test["name"]: test for test in test_suites[suite_data.name]["ag_test_cases"]}
@@ -299,29 +288,6 @@ def save_project(config_file: str, *, base_url: str, token_file: str):
 #         return None
 
 #     return instr_files[name]
-
-
-def get_fdbk_conf(
-    val: str | AGTestCommandFeedbackConfig | None,
-) -> AGTestCommandFeedbackConfig | None:
-    if val is None:
-        return None
-
-    if isinstance(val, str):
-        if val not in g_feedback_presets:
-            print(f'Feedback preset "{val}" not found.')
-        return g_feedback_presets[val]
-
-    return val
-
-
-def get_suite_setup_fdbk_conf(val: str | AGTestSuiteFeedbackConfig) -> AGTestSuiteFeedbackConfig:
-    if isinstance(val, str):
-        if val not in g_suite_setup_feedback_presets:
-            print(f'Suite setup feedback preset "{val}" not found')
-        return g_suite_setup_feedback_presets[val]
-
-    return val
 
 
 # def create_or_update_test(
@@ -568,3 +534,35 @@ def get_suite_setup_fdbk_conf(val: str | AGTestSuiteFeedbackConfig) -> AGTestSui
 #         string = string.replace(placeholder, str(replacement))
 
 #     return string
+
+
+T = TypeVar("T")
+
+
+def do_get(client: HTTPClient, url: str, response_type: type[T]) -> T:
+    response = client.get(url)
+    check_response_status(response)
+    return response_to_schema_obj(response, response_type)
+
+
+def do_post(client: HTTPClient, url: str, request_body: object, response_type: type[T]) -> T:
+    response = client.post(url, json=request_body)
+    check_response_status(response)
+    return response_to_schema_obj(response, response_type)
+
+
+def do_patch(client: HTTPClient, url: str, request_body: object, response_type: type[T]) -> T:
+    response = client.patch(url, json=request_body)
+    check_response_status(response)
+    return response_to_schema_obj(response, response_type)
+
+
+def response_to_schema_obj(response: Response, class_: type[T]) -> T:
+    return TypeAdapter(class_).validate_python(response.json())
+
+
+def do_get_list(client: HTTPClient, url: str, element_type: type[T]) -> list[T]:
+    response = client.get(url)
+    check_response_status(response)
+    type_adapter = TypeAdapter(element_type)
+    return [type_adapter.validate_python(obj) for obj in response.json()]
