@@ -223,19 +223,19 @@ class _ProjectSaver:
             "instructor_files_needed": [
                 self.instructor_files[name] for name in suite_data.instructor_files_needed
             ],
-            "normal_fdbk_config": self.get_suite_setup_fdbk_conf(suite_data.normal_fdbk_config),
-            "ultimate_submission_fdbk_config": self.get_suite_setup_fdbk_conf(
+            "normal_fdbk_config": self._get_suite_setup_fdbk_conf(suite_data.normal_fdbk_config),
+            "ultimate_submission_fdbk_config": self._get_suite_setup_fdbk_conf(
                 suite_data.ultimate_submission_fdbk_config
             ),
-            "past_limit_submission_fdbk_config": self.get_suite_setup_fdbk_conf(
+            "past_limit_submission_fdbk_config": self._get_suite_setup_fdbk_conf(
                 suite_data.past_limit_submission_fdbk_config
             ),
-            "staff_viewer_fdbk_config": self.get_suite_setup_fdbk_conf(
+            "staff_viewer_fdbk_config": self._get_suite_setup_fdbk_conf(
                 suite_data.staff_viewer_fdbk_config
             ),
         }
 
-    def get_suite_setup_fdbk_conf(
+    def _get_suite_setup_fdbk_conf(
         self, val: str | AGTestSuiteFeedbackConfig
     ) -> AGTestSuiteFeedbackConfig:
         if isinstance(val, str):
@@ -245,7 +245,7 @@ class _ProjectSaver:
 
         return val
 
-    def get_fdbk_conf(
+    def _get_fdbk_conf(
         self,
         val: str | AGTestCommandFeedbackConfig | None,
     ) -> AGTestCommandFeedbackConfig | None:
