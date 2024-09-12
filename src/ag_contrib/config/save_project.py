@@ -94,6 +94,7 @@ class _ProjectSaver:
         self._save_expected_student_files()
         self._save_instructor_files()
         self._load_sandbox_images()
+        self._save_test_suites()
         pass
 
     def _make_project_request_body(self):

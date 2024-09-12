@@ -32,19 +32,18 @@ project:
   - local_path: instructor_file.txt
   test_suites:
   - name: Suite 1
-    instructor_files_needed: []
+    instructor_files_needed: ['instructor_file.txt']
     read_only_instructor_files: true
-    student_files_needed: []
+    student_files_needed: ['hello.py']
     allow_network_access: false
     deferred: false
     sandbox_docker_image: Default
-    setup_suite_cmd: echo "Configure your setup command here. Set to empty string
-      to not use a setup command"
+    setup_suite_cmd: echo "WAAAAALUIGI"
     setup_suite_cmd_name: Setup
     reject_submission_if_setup_fails: false
-    normal_fdbk_config: public
-    ultimate_submission_fdbk_config: public
-    past_limit_submission_fdbk_config: public
+    normal_fdbk_config: pass/fail
+    ultimate_submission_fdbk_config: pass/fail
+    past_limit_submission_fdbk_config: private
     staff_viewer_fdbk_config: public
     test_cases:
     - name: Test 1
