@@ -1,0 +1,244 @@
+project:
+  name: Test Project 2
+  settings:
+    soft_closing_time: '2024-08-30T16:00:00-04:00'
+    closing_time: '2024-08-30T16:00:00-04:00'
+    anyone_with_link_can_submit: false
+    min_group_size: 1
+    max_group_size: 1
+    submission_limit_per_day: null
+    allow_submissions_past_limit: false
+    groups_combine_daily_submissions: false
+    submission_limit_reset_time: 12:00pm
+    submission_limit_reset_timezone: America/New_York
+    num_bonus_submissions: 0
+    total_submission_limit: null
+    allow_late_days: false
+    final_graded_submission: most_recent
+    hide_final_graded_submission_fdbk: false
+    send_email_on_submission_received: false
+    send_email_on_non_deferred_tests_finished: false
+    use_honor_pledge: false
+    honor_pledge_text: ''
+  course:
+    name: My Course
+    semester: Fall
+    year: 2024
+  student_files:
+  - pattern: hello.py
+    min_num_matches: 1
+    max_num_matches: 1
+  instructor_files:
+  - local_path: instructor_file.txt
+  test_suites:
+  - name: Suite 1
+    instructor_files_needed: []
+    read_only_instructor_files: true
+    student_files_needed: []
+    allow_network_access: false
+    deferred: false
+    sandbox_docker_image: Default
+    setup_suite_cmd: echo "Configure your setup command here. Set to empty string
+      to not use a setup command"
+    setup_suite_cmd_name: Setup
+    reject_submission_if_setup_fails: false
+    normal_fdbk_config: public
+    ultimate_submission_fdbk_config: public
+    past_limit_submission_fdbk_config: public
+    staff_viewer_fdbk_config: public
+    test_cases:
+    - name: Test 1
+      type: default
+      cmd: echo "Hello 1!"
+      input:
+        stdin_source: none
+        stdin_text: ''
+        stdin_instructor_file: null
+      return_code:
+        expected_return_code: none
+        points_for_correct_return_code: 0
+      output_diff:
+        expected_stdout_source: none
+        expected_stdout_text: ''
+        expected_stdout_instructor_file: null
+        points_for_correct_stdout: 0
+        expected_stderr_source: none
+        expected_stderr_text: ''
+        expected_stderr_instructor_file: null
+        points_for_correct_stderr: 0
+        ignore_case: false
+        ignore_whitespace: false
+        ignore_whitespace_changes: false
+        ignore_blank_lines: false
+      feedback:
+        normal_fdbk_config: pass/fail
+        first_failed_test_normal_fdbk_config: null
+        ultimate_submission_fdbk_config: pass/fail
+        past_limit_submission_fdbk_config: private
+        staff_viewer_fdbk_config: public
+      resources:
+        time_limit: 10
+        virtual_memory_limit: null
+        block_process_spawn: false
+      repeat: []
+    - name: Test 2
+      type: multi_cmd
+      repeat: []
+      advanced_feedback:
+        normal_fdbk_config:
+          visible: true
+          show_individual_commands: true
+          show_student_description: true
+        ultimate_submission_fdbk_config:
+          visible: true
+          show_individual_commands: true
+          show_student_description: true
+        past_limit_submission_fdbk_config:
+          visible: true
+          show_individual_commands: true
+          show_student_description: true
+        staff_viewer_fdbk_config:
+          visible: true
+          show_individual_commands: true
+          show_student_description: true
+      commands:
+      - name: Test 2
+        cmd: echo "Hello 2!"
+        input:
+          stdin_source: none
+          stdin_text: ''
+          stdin_instructor_file: null
+        return_code:
+          expected_return_code: none
+          points_for_correct_return_code: 0
+          deduction_for_wrong_return_code: 0
+        output_diff:
+          expected_stdout_source: none
+          expected_stdout_text: ''
+          expected_stdout_instructor_file: null
+          points_for_correct_stdout: 0
+          deduction_for_wrong_stdout: 0
+          expected_stderr_source: none
+          expected_stderr_text: ''
+          expected_stderr_instructor_file: null
+          points_for_correct_stderr: 0
+          deduction_for_wrong_stderr: 0
+          ignore_case: false
+          ignore_whitespace: false
+          ignore_whitespace_changes: false
+          ignore_blank_lines: false
+        feedback:
+          normal_fdbk_config: pass/fail
+          first_failed_test_normal_fdbk_config: null
+          ultimate_submission_fdbk_config: pass/fail
+          past_limit_submission_fdbk_config: private
+          staff_viewer_fdbk_config: public
+        resources:
+          time_limit: 10
+          virtual_memory_limit: null
+          block_process_spawn: false
+        repeat: []
+feedback_presets:
+  pass/fail:
+    visible: true
+    show_student_description: true
+    return_code_fdbk_level: correct_or_incorrect
+    stdout_fdbk_level: correct_or_incorrect
+    stderr_fdbk_level: correct_or_incorrect
+    show_points: true
+    show_actual_return_code: false
+    show_actual_stdout: false
+    show_actual_stderr: false
+    show_whether_timed_out: false
+  pass/fail+timeout:
+    visible: true
+    show_student_description: true
+    return_code_fdbk_level: correct_or_incorrect
+    stdout_fdbk_level: correct_or_incorrect
+    stderr_fdbk_level: correct_or_incorrect
+    show_points: true
+    show_actual_return_code: false
+    show_actual_stdout: false
+    show_actual_stderr: false
+    show_whether_timed_out: true
+  pass/fail+exit_status:
+    visible: true
+    show_student_description: true
+    return_code_fdbk_level: correct_or_incorrect
+    stdout_fdbk_level: correct_or_incorrect
+    stderr_fdbk_level: correct_or_incorrect
+    show_points: true
+    show_actual_return_code: true
+    show_actual_stdout: false
+    show_actual_stderr: false
+    show_whether_timed_out: true
+  pass/fail+output:
+    visible: true
+    show_student_description: true
+    return_code_fdbk_level: correct_or_incorrect
+    stdout_fdbk_level: correct_or_incorrect
+    stderr_fdbk_level: correct_or_incorrect
+    show_points: true
+    show_actual_return_code: false
+    show_actual_stdout: true
+    show_actual_stderr: true
+    show_whether_timed_out: false
+  pass/fail+diff:
+    visible: true
+    show_student_description: true
+    return_code_fdbk_level: correct_or_incorrect
+    stdout_fdbk_level: expected_and_actual
+    stderr_fdbk_level: expected_and_actual
+    show_points: true
+    show_actual_return_code: false
+    show_actual_stdout: false
+    show_actual_stderr: false
+    show_whether_timed_out: false
+  private:
+    visible: true
+    show_student_description: false
+    return_code_fdbk_level: no_feedback
+    stdout_fdbk_level: no_feedback
+    stderr_fdbk_level: no_feedback
+    show_points: false
+    show_actual_return_code: false
+    show_actual_stdout: false
+    show_actual_stderr: false
+    show_whether_timed_out: false
+  public:
+    visible: true
+    show_student_description: true
+    return_code_fdbk_level: expected_and_actual
+    stdout_fdbk_level: expected_and_actual
+    stderr_fdbk_level: expected_and_actual
+    show_points: true
+    show_actual_return_code: true
+    show_actual_stdout: true
+    show_actual_stderr: true
+    show_whether_timed_out: true
+feedback_presets_test_suite_setup:
+  public:
+    visible: true
+    show_individual_tests: true
+    show_student_description: true
+    show_setup_return_code: true
+    show_setup_timed_out: true
+    show_setup_stdout: true
+    show_setup_stderr: true
+  pass/fail:
+    visible: true
+    show_individual_tests: true
+    show_student_description: true
+    show_setup_return_code: true
+    show_setup_timed_out: true
+    show_setup_stdout: false
+    show_setup_stderr: false
+  private:
+    visible: true
+    show_individual_tests: true
+    show_student_description: false
+    show_setup_return_code: false
+    show_setup_timed_out: false
+    show_setup_stdout: false
+    show_setup_stderr: false
+docker_images: {}
