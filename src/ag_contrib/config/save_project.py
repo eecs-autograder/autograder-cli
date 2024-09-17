@@ -1,5 +1,5 @@
+from collections.abc import Mapping
 import itertools
-import json
 from pathlib import Path
 from typing import TypeVar
 from pydantic import TypeAdapter
@@ -69,27 +69,28 @@ class _ProjectSaver:
         )
         # print(projects)
 
-        self.project = next((p for p in projects if p["name"] == self.config.project.name), None)
+        project = next((p for p in projects if p["name"] == self.config.project.name), None)
+        self.project_pk = project["pk"] if project is not None else None
 
     def save_project(self):
-        if self.project is None:
+        if self.project_pk is None:
             print(f"Creating project {self.config.project.name}...")
-            self.project = do_post(
+            project = do_post(
                 self.client,
                 f'/api/courses/{self.course["pk"]}/projects/',
-                self._make_project_request_body(),
+                {"name": self.config.project.name},
                 Project,
             )
+            self.project_pk = project["pk"]
             print("Project created")
-        else:
-            print(f"Updating project {self.config.project.name} settings...")
-            self.project = do_patch(
-                self.client,
-                f'/api/projects/{self.project["pk"]}/',
-                self._make_project_request_body(),
-                Project,
-            )
-            print("Project settings updated")
+
+        print(f"Updating project {self.config.project.name} settings...")
+        request_body = self.config.project.settings.model_dump_json(
+            exclude_unset=True,
+            exclude={"grace_period", "send_email_receipts", "deadline"},
+        )
+        do_patch(self.client, f"/api/projects/{self.project_pk}/", request_body, Project)
+        print("Project settings updated")
 
         self._save_expected_student_files()
         self._save_instructor_files()
@@ -97,21 +98,13 @@ class _ProjectSaver:
         self._save_test_suites()
         pass
 
-    def _make_project_request_body(self):
-        return {"name": self.config.project.name} | json.loads(
-            self.config.project.settings.model_dump_json(
-                exclude_unset=True,
-                by_alias=True,
-            )
-        )
-
     def _save_expected_student_files(self):
-        assert self.project is not None
+        assert self.project_pk is not None
 
         print("Checking student files")
         file_list = do_get_list(
             self.client,
-            f'/api/projects/{self.project["pk"]}/expected_student_files/',
+            f"/api/projects/{self.project_pk}/expected_student_files/",
             ExpectedStudentFile,
         )
         self.student_files = {item["pattern"]: item for item in file_list}
@@ -128,19 +121,19 @@ class _ProjectSaver:
                 print("  Updated", pattern)
             else:
                 response = self.client.post(
-                    f'/api/projects/{self.project["pk"]}/expected_student_files/',
+                    f"/api/projects/{self.project_pk}/expected_student_files/",
                     json=student_file_config,
                 )
                 check_response_status(response)
                 print("  Created", pattern)
 
     def _save_instructor_files(self):
-        assert self.project is not None
+        assert self.project_pk is not None
 
         print("Checking instructor files...")
         file_list = do_get_list(
             self.client,
-            f'/api/projects/{self.project["pk"]}/instructor_files/',
+            f"/api/projects/{self.project_pk}/instructor_files/",
             InstructorFile,
         )
         self.instructor_files = {item["name"]: item for item in file_list}
@@ -158,7 +151,7 @@ class _ProjectSaver:
             else:
                 with open(self.project_config_dir / file_config.local_path, "rb") as f:
                     response = self.client.post(
-                        f'/api/projects/{self.project["pk"]}/instructor_files/',
+                        f"/api/projects/{self.project_pk}/instructor_files/",
                         files={"file_obj": f},
                     )
                 check_response_status(response)
@@ -184,12 +177,12 @@ class _ProjectSaver:
         print("\n".join(self.sandbox_images))
 
     def _save_test_suites(self):
-        assert self.project is not None
+        assert self.project_pk is not None
 
         print("Checking test suites")
         test_suites = do_get_list(
             self.client,
-            f'/api/projects/{self.project["pk"]}/ag_test_suites/',
+            f"/api/projects/{self.project_pk}/ag_test_suites/",
             AGTestSuite,
         )
         test_suites = {item["name"]: item for item in test_suites}
@@ -205,7 +198,7 @@ class _ProjectSaver:
                 print("  Updated", suite_data.name)
             else:
                 response = self.client.post(
-                    f'/api/projects/{self.project["pk"]}/ag_test_suites/',
+                    f"/api/projects/{self.project_pk}/ag_test_suites/",
                     json=self._make_save_test_suite_request_body(suite_data),
                 )
                 check_response_status(response)
@@ -552,8 +545,15 @@ def do_post(client: HTTPClient, url: str, request_body: object, response_type: t
     return response_to_schema_obj(response, response_type)
 
 
-def do_patch(client: HTTPClient, url: str, request_body: object, response_type: type[T]) -> T:
-    response = client.patch(url, json=request_body)
+def do_patch(
+    client: HTTPClient, url: str, request_body: Mapping[str, object] | str, response_type: type[T]
+) -> T:
+    if isinstance(request_body, dict):
+        response = client.patch(url, json=request_body)
+    else:
+        response = client.patch(
+            url, data=request_body, headers={"Content-Type": "application/json"}
+        )
     check_response_status(response)
     return response_to_schema_obj(response, response_type)
 

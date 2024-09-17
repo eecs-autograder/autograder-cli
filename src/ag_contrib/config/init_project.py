@@ -9,10 +9,12 @@ from ag_contrib.config.models import (
     MultiCmdTestCaseConfig,
     MultiCommandConfig,
     ProjectConfig,
+    ProjectSettings,
     SingleCmdTestCaseConfig,
     TestSuiteConfig,
 )
 from ag_contrib.config.generated import schema as ag_schema
+from tzlocal import get_localzone
 
 
 def init_project(
@@ -25,6 +27,7 @@ def init_project(
 ):
     project = ProjectConfig(
         name=project_name,
+        settings=ProjectSettings(timezone=get_localzone()),
         course=CourseSelection(name=course_name, semester=course_term, year=course_year),
         student_files=[
             ag_schema.CreateExpectedStudentFile(
@@ -47,7 +50,25 @@ def init_project(
     )
 
     with open(config_file, "w") as f:
-        yaml.dump(AGConfig(project=project).model_dump(mode="json"), f, sort_keys=False)
+        yaml.dump(
+            AGConfig(project=project).model_dump(
+                mode="json",
+                by_alias=True,
+                exclude={
+                    "project": {
+                        "settings": {
+                            "soft_closing_time",
+                            "closing_time",
+                            "submission_limit_reset_timezone",
+                            "send_email_on_submission_received",
+                            "send_email_on_non_deferred_tests_finished",
+                        },
+                    }
+                },
+            ),
+            f,
+            sort_keys=False,
+        )
 
     blank_instructor_file = Path(config_file).parent / Path("instructor_file.txt")
     print(blank_instructor_file)

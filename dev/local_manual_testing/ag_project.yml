@@ -1,29 +1,29 @@
 project:
   name: Test Project 2
-  settings:
-    soft_closing_time: '2024-08-30T16:00:00-04:00'
-    closing_time: '2024-08-30T16:00:00-04:00'
-    anyone_with_link_can_submit: false
-    min_group_size: 1
-    max_group_size: 1
-    submission_limit_per_day: null
-    allow_submissions_past_limit: false
-    groups_combine_daily_submissions: false
-    submission_limit_reset_time: 12:00pm
-    submission_limit_reset_timezone: America/New_York
-    num_bonus_submissions: 0
-    total_submission_limit: null
-    allow_late_days: false
-    final_graded_submission: most_recent
-    hide_final_graded_submission_fdbk: false
-    send_email_on_submission_received: false
-    send_email_on_non_deferred_tests_finished: false
-    use_honor_pledge: false
-    honor_pledge_text: ''
   course:
     name: My Course
     semester: Fall
     year: 2024
+  settings:
+    timezone: America/Chicago
+    publish_now: false
+    anyone_with_link_can_submit: false
+    deadline:  Sept 20, 2024 8:00pm
+    grace_period: 2 h 08m
+    allow_late_days: false
+    publish_grades: false
+    final_graded_submission_policy: most_recent
+    min_group_size: 1
+    max_group_size: 2
+    submission_limit_per_day: 2
+    allow_submissions_past_limit: false
+    groups_combine_daily_submissions: false
+    submission_limit_reset_time: 12:00pm
+    num_bonus_submissions: 0
+    send_email_receipts: true
+    use_honor_pledge: true
+    honor_pledge_text: 'I have neither given nor received aid on this assignment.'
+    total_submission_limit: 42
   student_files:
   - pattern: hello.py
     min_num_matches: 1
