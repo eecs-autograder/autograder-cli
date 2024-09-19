@@ -8,7 +8,7 @@ project:
     timezone: America/Chicago
     anyone_with_link_can_submit: false
     deadline:  Sept 20, 2024 8:00pm
-    grace_period: 2 h 08m
+    grace_period: 1d2 h 08m
     allow_late_days: false
     final_graded_submission_policy: most_recent
     min_group_size: 1
@@ -47,6 +47,9 @@ project:
     test_cases:
     - name: Test 1
       type: default
+      internal_admin_notes: "waluigi time"
+      staff_description: "WEEEEEEEE"
+      student_description: "WAAAAAAAAA"
       cmd: echo "Hello 1!"
       input:
         stdin_source: none

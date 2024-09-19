@@ -126,9 +126,21 @@ class ProjectSettings(BaseModel):
 
     @field_serializer("grace_period")
     def serialize_grace_period(self, value: datetime.timedelta) -> str:
+        days = value.days
         hours = value.seconds // 3600
         minutes = value.seconds % 60
-        return f"{hours}h{minutes}m"
+
+        result = ''
+        if days:
+            result += f'{days}d'
+
+        if hours:
+            result += f'{hours}h'
+
+        if minutes:
+            result += f'{minutes}'
+
+        return result
 
     @field_validator("grace_period", mode="plain")
     @classmethod
@@ -137,12 +149,20 @@ class ProjectSettings(BaseModel):
         if not isinstance(value, str):
             raise ValueError(error_msg)
 
-        match = re.match(r"\s*(((?P<hours>\d+)\s*h)?)\s*(((?P<minutes>\d+)\s*m)?)", value)
+        match = re.match(
+            r"""\s*(((?P<days>\d+)\s*d)?)
+            \s*(((?P<hours>\d+)\s*h)?)
+            \s*(((?P<minutes>\d+)\s*m)?)""",
+            value,
+            re.VERBOSE,
+        )
         if match is None or not (matches := match.groupdict()):
             raise ValueError(error_msg)
 
         return datetime.timedelta(
-            hours=int(matches.get("hours", 0)), minutes=int(matches.get("minutes", 0))
+            days=int(matches.get("days", 0)),
+            hours=int(matches.get("hours", 0)),
+            minutes=int(matches.get("minutes", 0)),
         )
 
     allow_late_days: bool = False
@@ -227,7 +247,9 @@ class FnmatchExpectedStudentFile(BaseModel):
         return self.pattern
 
 
-def _get_expected_student_file_discriminator(value: object) -> Literal['exact_match', 'fnmatch'] | None:
+def _get_expected_student_file_discriminator(
+    value: object,
+) -> Literal['exact_match', 'fnmatch'] | None:
     if isinstance(value, dict):
         if 'filename' in value:
             return 'exact_match'
@@ -249,7 +271,7 @@ def _get_expected_student_file_discriminator(value: object) -> Literal['exact_ma
 ExpectedStudentFile: TypeAlias = Annotated[
     Annotated[ExactMatchExpectedStudentFile, Tag('exact_match')]
     | Annotated[FnmatchExpectedStudentFile, Tag('fnmatch')],
-    Discriminator(_get_expected_student_file_discriminator)
+    Discriminator(_get_expected_student_file_discriminator),
 ]
 
 
@@ -289,7 +311,10 @@ class MultiCmdTestCaseConfig(BaseModel):
     name: str
     type: Literal["multi_cmd"] = "multi_cmd"
     repeat: list[dict[str, object]] = []
-    advanced_feedback: TestCaseAdvancedFdbkConfig = Field(
+    internal_admin_notes: str = ''
+    staff_description: str = ''
+    student_description: str = ''
+    feedback: TestCaseAdvancedFdbkConfig = Field(
         default_factory=lambda: TestCaseAdvancedFdbkConfig()
     )
     commands: list[MultiCommandConfig] = []
@@ -324,9 +349,6 @@ class MultiCmdTestCaseConfig(BaseModel):
                 new_tests.append(new_test)
 
         return new_tests
-
-    def to_json(self) -> ag_schema.AGTestCase:
-        raise NotImplementedError
 
 
 class TestCaseAdvancedFdbkConfig(BaseModel):
@@ -373,6 +395,11 @@ class MultiCommandConfig(BaseModel):
 class SingleCmdTestCaseConfig(BaseModel):
     name: str
     type: Literal["default", "single_cmd"] = "default"
+
+    internal_admin_notes: str = ''
+    staff_description: str = ''
+    student_description: str = ''
+
     cmd: str
 
     input: StdinSettings = Field(default_factory=lambda: StdinSettings())
@@ -408,9 +435,6 @@ class SingleCmdTestCaseConfig(BaseModel):
             new_tests.append(new_test)
 
         return new_tests
-
-    def to_json(self) -> ag_schema.AGTestCase:
-        raise NotImplementedError
 
 
 def apply_substitutions(string: str, sub: dict[str, object]) -> str:
