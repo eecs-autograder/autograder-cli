@@ -18,17 +18,14 @@ except ImportError:
 #     TestCaseConfig,
 #     TestSuiteConfig,
 # )
-from ag_contrib.config.generated.schema import (
-    AGTestCommandFeedbackConfig,
-    AGTestSuite,
-    AGTestSuiteFeedbackConfig,
-    Course,
+import ag_contrib.config.generated.schema as ag_schema
+from ag_contrib.config.models import (
+    AGConfig,
+    ExactMatchExpectedStudentFile,
     ExpectedStudentFile,
-    InstructorFile,
-    Project,
-    SandboxDockerImage,
+    FnmatchExpectedStudentFile,
+    TestSuiteConfig,
 )
-from ag_contrib.config.models import AGConfig, TestSuiteConfig
 from ag_contrib.http_client import HTTPClient, check_response_status
 from ag_contrib.utils import get_api_token
 
@@ -40,9 +37,9 @@ def save_project(config_file: str, *, base_url: str, token_file: str):
 
 
 class _ProjectSaver:
-    student_files: dict[str, ExpectedStudentFile] = {}
-    instructor_files: dict[str, InstructorFile] = {}
-    sandbox_images: dict[str, SandboxDockerImage] = {}
+    student_files: dict[str, ag_schema.ExpectedStudentFile] = {}
+    instructor_files: dict[str, ag_schema.InstructorFile] = {}
+    sandbox_images: dict[str, ag_schema.SandboxDockerImage] = {}
 
     def __init__(self, config_file: str, *, base_url: str, token_file: str):
         with open(config_file) as f:
@@ -59,13 +56,13 @@ class _ProjectSaver:
         self.course = do_get(
             self.client,
             f"/api/course/{course_data.name}/{course_data.semester}/{course_data.year}/",
-            Course,
+            ag_schema.Course,
         )
 
         projects = do_get_list(
             self.client,
             f'/api/courses/{self.course["pk"]}/projects/',
-            Project,
+            ag_schema.Project,
         )
         # print(projects)
 
@@ -79,7 +76,7 @@ class _ProjectSaver:
                 self.client,
                 f'/api/courses/{self.course["pk"]}/projects/',
                 {"name": self.config.project.name},
-                Project,
+                ag_schema.Project,
             )
             self.project_pk = project["pk"]
             print("Project created")
@@ -87,9 +84,9 @@ class _ProjectSaver:
         print(f"Updating project {self.config.project.name} settings...")
         request_body = self.config.project.settings.model_dump_json(
             exclude_unset=True,
-            exclude={"grace_period", "send_email_receipts", "deadline"},
+            exclude={"timezone", "grace_period", "send_email_receipts", "deadline"},
         )
-        do_patch(self.client, f"/api/projects/{self.project_pk}/", request_body, Project)
+        do_patch(self.client, f"/api/projects/{self.project_pk}/", request_body, ag_schema.Project)
         print("Project settings updated")
 
         self._save_expected_student_files()
@@ -105,27 +102,42 @@ class _ProjectSaver:
         file_list = do_get_list(
             self.client,
             f"/api/projects/{self.project_pk}/expected_student_files/",
-            ExpectedStudentFile,
+            ag_schema.ExpectedStudentFile,
         )
         self.student_files = {item["pattern"]: item for item in file_list}
 
         for student_file_config in self.config.project.student_files:
-            pattern = student_file_config["pattern"]
+            pattern = str(student_file_config)
             print("* Checking", pattern, "...")
-            if student_file_config["pattern"] in self.student_files:
-                response = self.client.patch(
+            if pattern in self.student_files:
+                do_patch(
+                    self.client,
                     f'/api/expected_student_files/{self.student_files[pattern]["pk"]}/',
-                    json=student_file_config,
+                    self._get_expected_student_file_request_body(student_file_config),
+                    ag_schema.ExpectedStudentFile,
                 )
-                check_response_status(response)
                 print("  Updated", pattern)
             else:
-                response = self.client.post(
+                do_post(
+                    self.client,
                     f"/api/projects/{self.project_pk}/expected_student_files/",
-                    json=student_file_config,
+                    self._get_expected_student_file_request_body(student_file_config),
+                    ag_schema.ExpectedStudentFile,
                 )
-                check_response_status(response)
                 print("  Created", pattern)
+
+    def _get_expected_student_file_request_body(
+        self, obj: ExpectedStudentFile
+    ) -> ag_schema.CreateExpectedStudentFile:
+        match (obj):
+            case ExactMatchExpectedStudentFile():
+                return {'pattern': obj.filename}
+            case FnmatchExpectedStudentFile():
+                return {
+                    'pattern': obj.pattern,
+                    'min_num_matches': obj.min_num_matches,
+                    'max_num_matches': obj.max_num_matches,
+                }
 
     def _save_instructor_files(self):
         assert self.project_pk is not None
@@ -134,7 +146,7 @@ class _ProjectSaver:
         file_list = do_get_list(
             self.client,
             f"/api/projects/{self.project_pk}/instructor_files/",
-            InstructorFile,
+            ag_schema.InstructorFile,
         )
         self.instructor_files = {item["name"]: item for item in file_list}
 
@@ -162,12 +174,12 @@ class _ProjectSaver:
         global_sandbox_images = do_get_list(
             self.client,
             f"/api/sandbox_docker_images/",
-            SandboxDockerImage,
+            ag_schema.SandboxDockerImage,
         )
         course_sandbox_images = do_get_list(
             self.client,
             f'/api/courses/{self.course["pk"]}/sandbox_docker_images/',
-            SandboxDockerImage,
+            ag_schema.SandboxDockerImage,
         )
 
         self.sandbox_images = {
@@ -183,7 +195,7 @@ class _ProjectSaver:
         test_suites = do_get_list(
             self.client,
             f"/api/projects/{self.project_pk}/ag_test_suites/",
-            AGTestSuite,
+            ag_schema.AGTestSuite,
         )
         test_suites = {item["name"]: item for item in test_suites}
 
@@ -230,8 +242,8 @@ class _ProjectSaver:
         }
 
     def _get_suite_setup_fdbk_conf(
-        self, val: str | AGTestSuiteFeedbackConfig
-    ) -> AGTestSuiteFeedbackConfig:
+        self, val: str | ag_schema.AGTestSuiteFeedbackConfig
+    ) -> ag_schema.AGTestSuiteFeedbackConfig:
         if isinstance(val, str):
             if val not in self.config.feedback_presets_test_suite_setup:
                 print(f'Suite setup feedback preset "{val}" not found')
@@ -241,8 +253,8 @@ class _ProjectSaver:
 
     def _get_fdbk_conf(
         self,
-        val: str | AGTestCommandFeedbackConfig | None,
-    ) -> AGTestCommandFeedbackConfig | None:
+        val: str | ag_schema.AGTestCommandFeedbackConfig | None,
+    ) -> ag_schema.AGTestCommandFeedbackConfig | None:
         if val is None:
             return None
 

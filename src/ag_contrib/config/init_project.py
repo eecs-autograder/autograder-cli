@@ -5,6 +5,8 @@ from ag_contrib.config.generated.schema import Semester
 from ag_contrib.config.models import (
     AGConfig,
     CourseSelection,
+    ExactMatchExpectedStudentFile,
+    FnmatchExpectedStudentFile,
     InstructorFileConfig,
     MultiCmdTestCaseConfig,
     MultiCommandConfig,
@@ -13,7 +15,6 @@ from ag_contrib.config.models import (
     SingleCmdTestCaseConfig,
     TestSuiteConfig,
 )
-from ag_contrib.config.generated import schema as ag_schema
 from tzlocal import get_localzone
 
 
@@ -30,8 +31,9 @@ def init_project(
         settings=ProjectSettings(timezone=get_localzone()),
         course=CourseSelection(name=course_name, semester=course_term, year=course_year),
         student_files=[
-            ag_schema.CreateExpectedStudentFile(
-                pattern="hello.py", min_num_matches=1, max_num_matches=1
+            ExactMatchExpectedStudentFile(filename='hello.py'),
+            FnmatchExpectedStudentFile(
+                pattern="test_*.py", min_num_matches=1, max_num_matches=3
             )
         ],
         instructor_files=[InstructorFileConfig(local_path=Path("instructor_file.txt"))],

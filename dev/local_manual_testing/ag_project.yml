@@ -23,9 +23,10 @@ project:
     honor_pledge_text: 'I have neither given nor received aid on this assignment.'
     total_submission_limit: 42
   student_files:
-  - pattern: hello.py
+  - filename: impl.py
+  - pattern: test*.py
     min_num_matches: 1
-    max_num_matches: 1
+    max_num_matches: 3
   instructor_files:
   - local_path: instructor_file.txt
   test_suites:

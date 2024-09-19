@@ -4,19 +4,19 @@ import datetime
 import itertools
 from pathlib import Path
 import re
-from typing import Annotated, Literal
+from typing import Annotated, Literal, TypeAlias
 from zoneinfo import ZoneInfo
 import zoneinfo
-
 from dateutil.parser import parse as parse_datetime
 from pydantic import (
     BaseModel,
+    Discriminator,
     Field,
-    FieldSerializationInfo,
     PlainSerializer,
     PlainValidator,
     SerializationInfo,
     SerializerFunctionWrapHandler,
+    Tag,
     WrapSerializer,
     computed_field,
     field_serializer,
@@ -64,7 +64,7 @@ class ProjectConfig(BaseModel):
     name: str
     course: CourseSelection
     settings: ProjectSettings
-    student_files: list[ag_schema.CreateExpectedStudentFile] = []
+    student_files: list[ExpectedStudentFile] = []
     instructor_files: list[InstructorFileConfig] = []
     test_suites: list[TestSuiteConfig] = []
 
@@ -114,7 +114,6 @@ class ProjectSettings(BaseModel):
         ZoneInfo,
         PlainValidator(validate_timezone),
         PlainSerializer(serialize_timezone),
-        Field(exclude=True),
     ]
 
     guests_can_submit: Annotated[bool, Field(alias="anyone_with_link_can_submit")] = False
@@ -210,6 +209,48 @@ class DockerImage(BaseModel):
     build_dir: Path
     include: list[Path] = []
     exclude: list[Path] = []
+
+
+class ExactMatchExpectedStudentFile(BaseModel):
+    filename: str
+
+    def __str__(self) -> str:
+        return self.filename
+
+
+class FnmatchExpectedStudentFile(BaseModel):
+    pattern: str
+    min_num_matches: int
+    max_num_matches: int
+
+    def __str__(self) -> str:
+        return self.pattern
+
+
+def _get_expected_student_file_discriminator(value: object) -> Literal['exact_match', 'fnmatch'] | None:
+    if isinstance(value, dict):
+        if 'filename' in value:
+            return 'exact_match'
+
+        if 'pattern' in value:
+            return 'fnmatch'
+
+        return None
+
+    if hasattr(value, 'filename'):
+        return 'exact_match'
+
+    if hasattr(value, 'pattern'):
+        return 'fnmatch'
+
+    return None
+
+
+ExpectedStudentFile: TypeAlias = Annotated[
+    Annotated[ExactMatchExpectedStudentFile, Tag('exact_match')]
+    | Annotated[FnmatchExpectedStudentFile, Tag('fnmatch')],
+    Discriminator(_get_expected_student_file_discriminator)
+]
 
 
 class InstructorFileConfig(BaseModel):
