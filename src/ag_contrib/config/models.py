@@ -117,7 +117,6 @@ class ProjectSettings(BaseModel):
         Field(exclude=True),
     ]
 
-    visible_to_students: Annotated[bool, Field(alias="publish_now")] = False
     guests_can_submit: Annotated[bool, Field(alias="anyone_with_link_can_submit")] = False
     deadline: Annotated[
         datetime.datetime | None,
@@ -167,7 +166,6 @@ class ProjectSettings(BaseModel):
 
         return (self.deadline + self.grace_period).replace(tzinfo=self.timezone).isoformat()
 
-    hide_ultimate_submission_fdbk: Annotated[bool, Field(alias="publish_grades")] = False
     ultimate_submission_policy: Annotated[
         Literal["most_recent", "best"], Field(alias="final_graded_submission_policy")
     ] = "most_recent"

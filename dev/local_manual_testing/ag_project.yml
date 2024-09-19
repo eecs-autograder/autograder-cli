@@ -6,12 +6,10 @@ project:
     year: 2024
   settings:
     timezone: America/Chicago
-    publish_now: false
     anyone_with_link_can_submit: false
     deadline:  Sept 20, 2024 8:00pm
     grace_period: 2 h 08m
     allow_late_days: false
-    publish_grades: false
     final_graded_submission_policy: most_recent
     min_group_size: 1
     max_group_size: 2
