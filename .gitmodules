@@ -1,0 +1,4 @@
+[submodule "test/local_stack/autograder-server"]
+	path = test/local_stack/autograder-server
+	url = git@github.com:eecs-autograder/autograder-server
+	branch = release-2024.08.x

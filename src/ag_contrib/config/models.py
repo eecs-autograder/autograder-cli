@@ -1,12 +1,14 @@
 from __future__ import annotations
 
+from collections.abc import Mapping
 import datetime
 import itertools
-from pathlib import Path
 import re
-from typing import Annotated, Literal, TypeAlias
-from zoneinfo import ZoneInfo
 import zoneinfo
+from pathlib import Path
+from typing import Annotated, Any, Final, Literal, TypeAlias, cast
+from zoneinfo import ZoneInfo
+
 from dateutil.parser import parse as parse_datetime
 from pydantic import (
     BaseModel,
@@ -130,15 +132,15 @@ class ProjectSettings(BaseModel):
         hours = value.seconds // 3600
         minutes = value.seconds % 60
 
-        result = ''
+        result = ""
         if days:
-            result += f'{days}d'
+            result += f"{days}d"
 
         if hours:
-            result += f'{hours}h'
+            result += f"{hours}h"
 
         if minutes:
-            result += f'{minutes}'
+            result += f"{minutes}"
 
         return result
 
@@ -249,28 +251,28 @@ class FnmatchExpectedStudentFile(BaseModel):
 
 def _get_expected_student_file_discriminator(
     value: object,
-) -> Literal['exact_match', 'fnmatch'] | None:
+) -> Literal["exact_match", "fnmatch"] | None:
     if isinstance(value, dict):
-        if 'filename' in value:
-            return 'exact_match'
+        if "filename" in value:
+            return "exact_match"
 
-        if 'pattern' in value:
-            return 'fnmatch'
+        if "pattern" in value:
+            return "fnmatch"
 
         return None
 
-    if hasattr(value, 'filename'):
-        return 'exact_match'
+    if hasattr(value, "filename"):
+        return "exact_match"
 
-    if hasattr(value, 'pattern'):
-        return 'fnmatch'
+    if hasattr(value, "pattern"):
+        return "fnmatch"
 
     return None
 
 
 ExpectedStudentFile: TypeAlias = Annotated[
-    Annotated[ExactMatchExpectedStudentFile, Tag('exact_match')]
-    | Annotated[FnmatchExpectedStudentFile, Tag('fnmatch')],
+    Annotated[ExactMatchExpectedStudentFile, Tag("exact_match")]
+    | Annotated[FnmatchExpectedStudentFile, Tag("fnmatch")],
     Discriminator(_get_expected_student_file_discriminator),
 ]
 
@@ -311,9 +313,9 @@ class MultiCmdTestCaseConfig(BaseModel):
     name: str
     type: Literal["multi_cmd"] = "multi_cmd"
     repeat: list[dict[str, object]] = []
-    internal_admin_notes: str = ''
-    staff_description: str = ''
-    student_description: str = ''
+    internal_admin_notes: str = ""
+    staff_description: str = ""
+    student_description: str = ""
     feedback: TestCaseAdvancedFdbkConfig = Field(
         default_factory=lambda: TestCaseAdvancedFdbkConfig()
     )
@@ -331,16 +333,6 @@ class MultiCmdTestCaseConfig(BaseModel):
                 for command in new_test.commands:
                     command.name = apply_substitutions(command.name, substitution)
                     command.cmd = apply_substitutions(command.cmd, substitution)
-
-                    command.return_code.points_for_correct_return_code = apply_points_substitution(
-                        command.return_code.points_for_correct_return_code, substitution
-                    )
-                    command.output_diff.points_for_correct_stdout = apply_points_substitution(
-                        command.output_diff.points_for_correct_stdout, substitution
-                    )
-                    command.output_diff.points_for_correct_stderr = apply_points_substitution(
-                        command.output_diff.points_for_correct_stderr, substitution
-                    )
 
                 new_test.commands = list(
                     itertools.chain(*[cmd.do_repeat() for cmd in new_test.commands])
@@ -379,10 +371,16 @@ class MultiCommandConfig(BaseModel):
     cmd: str
 
     input: StdinSettings = Field(default_factory=lambda: StdinSettings())
-    return_code: MultiCmdReturnCodeCheckSettings = Field(
-        default_factory=lambda: MultiCmdReturnCodeCheckSettings()
+    return_code: MultiCmdTestReturnCodeCheckSettings = Field(
+        default_factory=lambda: MultiCmdTestReturnCodeCheckSettings()
     )
-    output_diff: MultiCmdDiffSettings = Field(default_factory=lambda: MultiCmdDiffSettings())
+    stdout: MultiCmdTestOutputSettings = Field(
+        default_factory=lambda: MultiCmdTestOutputSettings()
+    )
+    stderr: MultiCmdTestOutputSettings = Field(
+        default_factory=lambda: MultiCmdTestOutputSettings()
+    )
+    diff_options: DiffOptions = Field(default_factory=lambda: DiffOptions())
     feedback: CommandFeedbackSettings = Field(default_factory=lambda: CommandFeedbackSettings())
     resources: ResourceLimits = Field(default_factory=lambda: ResourceLimits())
 
@@ -396,17 +394,24 @@ class SingleCmdTestCaseConfig(BaseModel):
     name: str
     type: Literal["default", "single_cmd"] = "default"
 
-    internal_admin_notes: str = ''
-    staff_description: str = ''
-    student_description: str = ''
+    internal_admin_notes: str = ""
+    staff_description: str = ""
+    student_description: str = ""
+    student_on_fail_description: str = ""
 
     cmd: str
 
     input: StdinSettings = Field(default_factory=lambda: StdinSettings())
-    return_code: SingleCmdReturnCodeCheckSettings = Field(
-        default_factory=lambda: SingleCmdReturnCodeCheckSettings()
+    return_code: SingleCmdTestReturnCodeCheckSettings = Field(
+        default_factory=lambda: SingleCmdTestReturnCodeCheckSettings()
     )
-    output_diff: SingleCmdDiffSettings = Field(default_factory=lambda: SingleCmdDiffSettings())
+    stdout: SingleCmdTestOutputSettings = Field(
+        default_factory=lambda: SingleCmdTestOutputSettings()
+    )
+    stderr: SingleCmdTestOutputSettings = Field(
+        default_factory=lambda: SingleCmdTestOutputSettings()
+    )
+    diff_options: DiffOptions = Field(default_factory=lambda: DiffOptions())
     feedback: CommandFeedbackSettings = Field(default_factory=lambda: CommandFeedbackSettings())
     resources: ResourceLimits = Field(default_factory=lambda: ResourceLimits())
 
@@ -418,100 +423,94 @@ class SingleCmdTestCaseConfig(BaseModel):
 
         new_tests: list[SingleCmdTestCaseConfig] = []
         for substitution in self.repeat:
-            new_test = self.model_copy(deep=True)
-            new_test.name = apply_substitutions(new_test.name, substitution)
-            new_test.cmd = apply_substitutions(new_test.name, substitution)
+            new_data = self.model_dump(exclude_unset=True) | {
+                "name": apply_substitutions(self.name, substitution),
+                "cmd": apply_substitutions(self.cmd, substitution),
+            }
 
-            new_test.return_code.points_for_correct_return_code = apply_points_substitution(
-                new_test.return_code.points_for_correct_return_code, substitution
-            )
-            new_test.output_diff.points_for_correct_stdout = apply_points_substitution(
-                new_test.output_diff.points_for_correct_stdout, substitution
-            )
-            new_test.output_diff.points_for_correct_stderr = apply_points_substitution(
-                new_test.output_diff.points_for_correct_stderr, substitution
-            )
+            if self.input.instructor_file is not None:
+                new_data["input"]["instructor_file"] = apply_substitutions(
+                    self.input.instructor_file, substitution
+                )
+            if self.stdout.instructor_file is not None:
+                new_data["stdout"]["instructor_file"] = apply_substitutions(
+                    self.stdout.instructor_file, substitution
+                )
+            if self.stderr.instructor_file is not None:
+                new_data["stderr"]["instructor_file"] = apply_substitutions(
+                    self.stderr.instructor_file, substitution
+                )
 
-            new_tests.append(new_test)
+            if _REPEAT_OVERRIDE_KEY in substitution:
+                overrides = substitution[_REPEAT_OVERRIDE_KEY]
+                if not isinstance(overrides, dict):
+                    raise AGConfigError(
+                        "Expected a dictionary for repeat overrides, "
+                        f'but was "{type(overrides)}"'
+                    )
+
+                # See https://github.com/microsoft/pyright/discussions/1792
+                for key, value in cast(Mapping[Any, Any], overrides).items():
+                    if key not in new_data or not isinstance(key, str):
+                        raise AGConfigError(
+                            f'Warning: unrecognized field "{key}" in '
+                            'repeat override for test "{self.name}"'
+                        )
+
+                    if isinstance(value, dict):
+                        new_data[key].update(value)
+                    else:
+                        new_data[key] = value
+
+            new_tests.append(SingleCmdTestCaseConfig.model_validate(new_data))
 
         return new_tests
 
 
 def apply_substitutions(string: str, sub: dict[str, object]) -> str:
     for placeholder, replacement in sub.items():
-        string = string.replace(placeholder, str(replacement))
+        if placeholder != _REPEAT_OVERRIDE_KEY:
+            string = string.replace(placeholder, str(replacement))
 
     return string
 
 
-def apply_points_substitution(original_points_val: str | int, sub: dict[str, object]) -> int:
-    if isinstance(original_points_val, int):
-        return original_points_val
-
-    if original_points_val not in sub:
-        raise PointsSubstitutionError(f'Repeater key "{original_points_val}" not found.')
-
-    sub_value = sub[original_points_val]
-    if not isinstance(sub_value, int):
-        raise PointsSubstitutionError(
-            "Point value substitutions must be an integer, "
-            f'but got type "{type(original_points_val)}"'
-        )
-
-    return sub_value
-
-
-class PointsSubstitutionError(AGConfigError):
-    pass
+_REPEAT_OVERRIDE_KEY: Final = "_override"
 
 
 class StdinSettings(BaseModel):
-    stdin_source: ag_schema.StdinSource = "none"
-    stdin_text: str = ""
-    stdin_instructor_file: str | None = None
+    source: ag_schema.StdinSource = "none"
+    text: str = ""
+    instructor_file: str | None = None
 
 
-class MultiCmdReturnCodeCheckSettings(BaseModel):
-    expected_return_code: ag_schema.ExpectedReturnCode = "none"
-    points_for_correct_return_code: int = 0
-    deduction_for_wrong_return_code: int = 0
+class SingleCmdTestReturnCodeCheckSettings(BaseModel):
+    expected: ag_schema.ExpectedReturnCode = "none"
+    points: int = 0
 
 
-class SingleCmdReturnCodeCheckSettings(BaseModel):
-    expected_return_code: ag_schema.ExpectedReturnCode = "none"
-    points_for_correct_return_code: int | str = 0
+class MultiCmdTestReturnCodeCheckSettings(BaseModel):
+    expected: ag_schema.ExpectedReturnCode = "none"
+    points: int = 0
+    deduction: int = 0
 
 
-class MultiCmdDiffSettings(BaseModel):
-    expected_stdout_source: ag_schema.ExpectedOutputSource = "none"
-    expected_stdout_text: str = ""
-    expected_stdout_instructor_file: str | None = None
-    points_for_correct_stdout: int = 0
-    deduction_for_wrong_stdout: int = 0
-
-    expected_stderr_source: ag_schema.ExpectedOutputSource = "none"
-    expected_stderr_text: str = ""
-    expected_stderr_instructor_file: str | None = None
-    points_for_correct_stderr: int = 0
-    deduction_for_wrong_stderr: int = 0
-
-    ignore_case: bool = False
-    ignore_whitespace: bool = False
-    ignore_whitespace_changes: bool = False
-    ignore_blank_lines: bool = False
+class SingleCmdTestOutputSettings(BaseModel):
+    compare_with: ag_schema.ExpectedOutputSource = "none"
+    text: str = ""
+    instructor_file: str | None = None
+    points: int = 0
 
 
-class SingleCmdDiffSettings(BaseModel):
-    expected_stdout_source: ag_schema.ExpectedOutputSource = "none"
-    expected_stdout_text: str = ""
-    expected_stdout_instructor_file: str | None = None
-    points_for_correct_stdout: int | str = 0
+class MultiCmdTestOutputSettings(BaseModel):
+    compare_with: ag_schema.ExpectedOutputSource = "none"
+    text: str = ""
+    instructor_file: str | None = None
+    points: int = 0
+    deduction: int = 0
 
-    expected_stderr_source: ag_schema.ExpectedOutputSource = "none"
-    expected_stderr_text: str = ""
-    expected_stderr_instructor_file: str | None = None
-    points_for_correct_stderr: int | str = 0
 
+class DiffOptions(BaseModel):
     ignore_case: bool = False
     ignore_whitespace: bool = False
     ignore_whitespace_changes: bool = False

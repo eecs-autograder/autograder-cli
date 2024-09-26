@@ -52,27 +52,29 @@ project:
       student_description: "WAAAAAAAAA"
       cmd: echo "Hello 1!"
       input:
-        stdin_source: none
-        stdin_text: ''
-        stdin_instructor_file: null
+        source: text
+        text: ''
+        instructor_file: instructor_file.txt
       return_code:
-        expected_return_code: none
-        points_for_correct_return_code: 0
-      output_diff:
-        expected_stdout_source: none
-        expected_stdout_text: ''
-        expected_stdout_instructor_file: null
-        points_for_correct_stdout: 0
-        expected_stderr_source: none
-        expected_stderr_text: ''
-        expected_stderr_instructor_file: null
-        points_for_correct_stderr: 0
-        ignore_case: false
-        ignore_whitespace: false
-        ignore_whitespace_changes: false
-        ignore_blank_lines: false
+        expected: zero
+        points: 1
+      stdout:
+        compare_with: instructor_file
+        text: ''
+        instructor_file: instructor_file.txt
+        points: 2
+      stderr:
+        compare_with: instructor_file
+        text: ''
+        instructor_file: instructor_file.txt
+        points: 3
+      diff_options:
+        ignore_case: true
+        ignore_whitespace: true
+        ignore_whitespace_changes: true
+        ignore_blank_lines: true
       feedback:
-        normal_fdbk_config: pass/fail
+        normal_fdbk_config: pass/fail+timeout
         first_failed_test_normal_fdbk_config: null
         ultimate_submission_fdbk_config: pass/fail
         past_limit_submission_fdbk_config: private

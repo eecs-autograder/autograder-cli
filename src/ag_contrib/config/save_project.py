@@ -1,4 +1,5 @@
 from collections.abc import Mapping
+import copy
 import itertools
 from pathlib import Path
 from typing import TypeVar
@@ -14,9 +15,11 @@ except ImportError:
 import ag_contrib.config.generated.schema as ag_schema
 from ag_contrib.config.models import (
     AGConfig,
+    AGConfigError,
     ExactMatchExpectedStudentFile,
     ExpectedStudentFile,
     FnmatchExpectedStudentFile,
+    InstructorFileConfig,
     MultiCmdTestCaseConfig,
     SingleCmdTestCaseConfig,
     TestSuiteConfig,
@@ -124,12 +127,12 @@ class _ProjectSaver:
     ) -> ag_schema.CreateExpectedStudentFile:
         match (obj):
             case ExactMatchExpectedStudentFile():
-                return {'pattern': obj.filename}
+                return {"pattern": obj.filename}
             case FnmatchExpectedStudentFile():
                 return {
-                    'pattern': obj.pattern,
-                    'min_num_matches': obj.min_num_matches,
-                    'max_num_matches': obj.max_num_matches,
+                    "pattern": obj.pattern,
+                    "min_num_matches": obj.min_num_matches,
+                    "max_num_matches": obj.max_num_matches,
                 }
 
     def _save_instructor_files(self):
@@ -161,6 +164,8 @@ class _ProjectSaver:
                     )
                 check_response_status(response)
                 print("  Created", file_config.name, "from", file_config.local_path)
+
+            self.instructor_files[file_config.name] = response.json()
 
     def _load_sandbox_images(self):
         print("Loading sandbox images...")
@@ -195,7 +200,8 @@ class _ProjectSaver:
         for suite_data in self.config.project.test_suites:
             print("* Checking test suite", suite_data.name, "...")
             if suite_data.name not in test_suites:
-                response = do_post(self.client,
+                response = do_post(
+                    self.client,
                     f"/api/projects/{self.project_pk}/ag_test_suites/",
                     self._make_save_test_suite_request_body(suite_data),
                     ag_schema.AGTestSuite,
@@ -211,47 +217,32 @@ class _ProjectSaver:
                 )
                 print("  Updated", suite_data.name)
 
-            test_cases = {test["name"]: test for test in test_suites[suite_data.name]["ag_test_cases"]}
+            test_cases = {
+                test["name"]: test for test in test_suites[suite_data.name]["ag_test_cases"]
+            }
             for tests in suite_data.test_cases:
                 for test in tests.do_repeat():
-                    print("  * Checking test case", suite_data.name, "...")
-                    if test.name not in test_cases:
-                        response = do_post(
-                            self.client,
-                            f'/api/ag_test_suites/{test_suites[suite_data.name]["pk"]}/ag_test_cases/',
-                            self._make_save_test_case_request_body(test),
-                            ag_schema.AGTestCase,
-                        )
-                        test_cases[test.name] = response
-                        print("  Created", test.name)
-                    else:
-                        do_patch(
-                            self.client,
-                            f'/api/ag_test_cases/{test_cases[test.name]["pk"]}/',
-                            self._make_save_test_case_request_body(test),
-                            ag_schema.AGTestCase,
-                        )
-                        print("  Updated", test.name)
-#             if test_data.repeat:
-#                 repeat_test_case(
-#                     test_data.repeat,
-#                     client,
-#                     suite_data,
-#                     test_data,
-#                     test_suites=test_suites,
-#                     test_cases=test_cases,
-#                     instructor_files=instructor_files,
-#                 )
-#             else:
-#                 create_or_update_test(
-#                     client,
-#                     suite_data,
-#                     test_data,
-#                     test_suites=test_suites,
-#                     test_cases=test_cases,
-#                     instructor_files=instructor_files,
-#                 )
+                    self._save_test_case(test, test_suites[suite_data.name]["pk"], test_cases)
 
+    #             if test_data.repeat:
+    #                 repeat_test_case(
+    #                     test_data.repeat,
+    #                     client,
+    #                     suite_data,
+    #                     test_data,
+    #                     test_suites=test_suites,
+    #                     test_cases=test_cases,
+    #                     instructor_files=instructor_files,
+    #                 )
+    #             else:
+    #                 create_or_update_test(
+    #                     client,
+    #                     suite_data,
+    #                     test_data,
+    #                     test_suites=test_suites,
+    #                     test_cases=test_cases,
+    #                     instructor_files=instructor_files,
+    #                 )
 
     def _make_save_test_suite_request_body(self, suite_config: TestSuiteConfig):
         return suite_config.model_dump(
@@ -287,28 +278,132 @@ class _ProjectSaver:
 
         return val
 
+    def _save_test_case(
+        self,
+        test: SingleCmdTestCaseConfig | MultiCmdTestCaseConfig,
+        suite_pk: int,
+        existing_tests: Mapping[str, ag_schema.AGTestCase],
+    ):
+        existing_tests = dict(copy.deepcopy(existing_tests))
+        print("  * Checking test case", test.name, "...")
+        if test.name not in existing_tests:
+            test_data = do_post(
+                self.client,
+                f"/api/ag_test_suites/{suite_pk}/ag_test_cases/",
+                self._make_save_test_case_request_body(test),
+                ag_schema.AGTestCase,
+            )
+            print("    Created", test.name)
+        else:
+            test_data = do_patch(
+                self.client,
+                f'/api/ag_test_cases/{existing_tests[test.name]["pk"]}/',
+                self._make_save_test_case_request_body(test),
+                ag_schema.AGTestCase,
+            )
+            print("    Updated", test.name)
+
+        existing_cmds = {cmd_data["name"]: cmd_data for cmd_data in test_data["ag_test_commands"]}
+
+        match (test):
+            case SingleCmdTestCaseConfig():
+                print("    * Checking command for", test.name)
+                if test.name not in existing_cmds:
+                    do_post(
+                        self.client,
+                        f'/api/ag_test_cases/{test_data["pk"]}/ag_test_commands/',
+                        self._make_save_single_cmd_test_request_body(test),
+                        ag_schema.AGTestCommand,
+                    )
+                    print("      Created")
+                else:
+                    do_patch(
+                        self.client,
+                        f'/api/ag_test_commands/{existing_cmds[test.name]["pk"]}/',
+                        self._make_save_single_cmd_test_request_body(test),
+                        ag_schema.AGTestCommand,
+                    )
+                    print("      Updated")
+            case MultiCmdTestCaseConfig():
+                for cmd in test.commands:
+                    pass
+
     def _make_save_test_case_request_body(
         self, test: SingleCmdTestCaseConfig | MultiCmdTestCaseConfig
     ) -> ag_schema.CreateAGTestCase:
         match test:
             case SingleCmdTestCaseConfig():
                 return {
-                    'name': test.name,
-                    'internal_admin_notes': test.internal_admin_notes,
-                    'staff_description': test.staff_description,
-                    'student_description': test.student_description,
+                    "name": test.name,
+                    "internal_admin_notes": test.internal_admin_notes,
+                    "staff_description": test.staff_description,
+                    "student_description": test.student_description,
                 }
             case MultiCmdTestCaseConfig():
                 return {
-                    'name': test.name,
-                    'internal_admin_notes': test.internal_admin_notes,
-                    'staff_description': test.staff_description,
-                    'student_description': test.student_description,
-                    'normal_fdbk_config': test.feedback.normal_fdbk_config,
-                    'ultimate_submission_fdbk_config': test.feedback.ultimate_submission_fdbk_config,
-                    'past_limit_submission_fdbk_config': test.feedback.past_limit_submission_fdbk_config,
-                    'staff_viewer_fdbk_config': test.feedback.staff_viewer_fdbk_config,
+                    "name": test.name,
+                    "internal_admin_notes": test.internal_admin_notes,
+                    "staff_description": test.staff_description,
+                    "student_description": test.student_description,
+                    "normal_fdbk_config": test.feedback.normal_fdbk_config,
+                    "ultimate_submission_fdbk_config": test.feedback.ultimate_submission_fdbk_config,
+                    "past_limit_submission_fdbk_config": test.feedback.past_limit_submission_fdbk_config,
+                    "staff_viewer_fdbk_config": test.feedback.staff_viewer_fdbk_config,
                 }
+
+    def _make_save_single_cmd_test_request_body(
+        self,
+        test: SingleCmdTestCaseConfig,
+    ) -> ag_schema.AGTestCommand:
+        body: ag_schema.AGTestCommand = {
+            "name": test.name,
+            "cmd": test.cmd,
+            "internal_admin_notes": test.internal_admin_notes,
+            "staff_description": test.staff_description,
+            "student_description": test.student_description,
+            "student_on_fail_description": test.student_on_fail_description,
+            "stdin_source": test.input.source,
+            "stdin_text": test.input.text,
+            # The schema is incorrect, stdin_instructor_file should be nullable.
+            "stdin_instructor_file": self._get_instructor_file(test.input.instructor_file),  # type: ignore
+            "expected_return_code": test.return_code.expected,
+            "points_for_correct_return_code": int(test.return_code.points),
+            "expected_stdout_source": test.stdout.compare_with,
+            "expected_stdout_text": test.stdout.text,
+            # The schema is incorrect, expected_stdout_instructor_file should be nullable.
+            "expected_stdout_instructor_file": self._get_instructor_file(test.stdout.instructor_file),  # type: ignore
+            "points_for_correct_stdout": int(test.stdout.points),
+            "expected_stderr_source": test.stderr.compare_with,
+            "expected_stderr_text": test.stderr.text,
+            # The schema is incorrect, expected_stderr_instructor_file should be nullable.
+            "expected_stderr_instructor_file": self._get_instructor_file(test.stderr.instructor_file),  # type: ignore
+            "points_for_correct_stderr": int(test.stderr.points),
+            "ignore_case": test.diff_options.ignore_case,
+            "ignore_whitespace": test.diff_options.ignore_whitespace,
+            "ignore_whitespace_changes": test.diff_options.ignore_whitespace_changes,
+            "ignore_blank_lines": test.diff_options.ignore_blank_lines,
+            "normal_fdbk_config": self._get_fdbk_conf(test.feedback.normal_fdbk_config),
+            "first_failed_test_normal_fdbk_config": self._get_fdbk_conf(
+                test.feedback.first_failed_test_normal_fdbk_config
+            ),
+            "ultimate_submission_fdbk_config": self._get_fdbk_conf(
+                test.feedback.ultimate_submission_fdbk_config
+            ),
+            "past_limit_submission_fdbk_config": self._get_fdbk_conf(
+                test.feedback.past_limit_submission_fdbk_config
+            ),
+            "staff_viewer_fdbk_config": self._get_fdbk_conf(
+                test.feedback.staff_viewer_fdbk_config
+            ),
+            "time_limit": test.resources.time_limit,
+            "use_virtual_memory_limit": test.resources.virtual_memory_limit is not None,
+            "block_process_spawn": test.resources.block_process_spawn,
+        }
+
+        if test.resources.virtual_memory_limit is not None:
+            body["virtual_memory_limit"] = test.resources.virtual_memory_limit
+
+        return body
 
     def _get_fdbk_conf(
         self,
@@ -323,6 +418,15 @@ class _ProjectSaver:
             return self.config.feedback_presets[val]
 
         return val
+
+    def _get_instructor_file(self, filename: str | None) -> ag_schema.InstructorFile | None:
+        if filename is None:
+            return None
+
+        if filename not in self.instructor_files:
+            raise AGConfigError(f'Instructor file "{filename}" not found.')
+
+        return self.instructor_files[filename]
 
 
 #         test_cases = {test["name"]: test for test in test_suites[suite_data.name]["ag_test_cases"]}
