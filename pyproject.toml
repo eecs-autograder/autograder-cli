@@ -35,19 +35,26 @@ dependencies = { file = ["requirements.in"] }
 [tool.pycodestyle]
 ignore = "W503,E133"
 max-line-length = 99
-exclude = "generated"
+exclude = ["generated", "test/local_stack"]
 
 [tool.pydocstyle]
 ignore = "D1,D200,D203,D204,D205,D212,D4"
+exclude = ["generated", "test/local_stack"]
 
 [tool.pyright]
-include = ["src"]
-#exclude = ["src/ag_contrib/http_client.py"]
-strict = ["src"]
+include = ["src", "test"]
+exclude = ["test/local_stack"]
+strict = ["src", "test"]
 
 [tool.isort]
 profile = "black"
+line_length = 99
+skip = ["generated", "test/local_stack"]
 
 [tool.black]
 line-length = 99
 target-version = ["py310"]
+exclude = "test/local_stack|generated"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

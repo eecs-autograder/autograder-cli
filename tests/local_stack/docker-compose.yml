@@ -6,11 +6,11 @@ services:
       context: ./autograder-server
       dockerfile: Dockerfile-django-dev
     ports:
-      - "9000:9000"
+      - "9002:9002"
     volumes:
       - ./autograder-server:/usr/src/app
     command: >-
-      python3 manage.py runserver 0.0.0.0:9000
+      python3 manage.py runserver 0.0.0.0:9002
 
     env_file:
       - ./autograder-server/_dev.env

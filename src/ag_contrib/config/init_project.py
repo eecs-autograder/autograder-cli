@@ -15,26 +15,23 @@ from ag_contrib.config.models import (
     SingleCmdTestCaseConfig,
     TestSuiteConfig,
 )
-from tzlocal import get_localzone
 
 
 def init_project(
-    project_name: str,
     course_name: str,
     course_term: Semester,
     course_year: int,
+    project_name: str,
     config_file: str,
     **kwargs: object,
 ):
     project = ProjectConfig(
         name=project_name,
-        settings=ProjectSettings(timezone=get_localzone()),
+        settings=ProjectSettings(),
         course=CourseSelection(name=course_name, semester=course_term, year=course_year),
         student_files=[
             ExactMatchExpectedStudentFile(filename='hello.py'),
-            FnmatchExpectedStudentFile(
-                pattern="test_*.py", min_num_matches=1, max_num_matches=3
-            )
+            FnmatchExpectedStudentFile(pattern="test_*.py", min_num_matches=1, max_num_matches=3),
         ],
         instructor_files=[InstructorFileConfig(local_path=Path("instructor_file.txt"))],
         test_suites=[

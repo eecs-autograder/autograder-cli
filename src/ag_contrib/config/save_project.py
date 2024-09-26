@@ -1,11 +1,11 @@
-from collections.abc import Mapping
 import copy
 import itertools
+from collections.abc import Mapping
 from pathlib import Path
-from typing import TypeVar
-from pydantic import TypeAdapter
-from requests import Response
+
 import yaml
+
+from .utils import do_get, do_get_list, do_patch, do_post, get_project_from_course
 
 try:
     from yaml import CLoader as Loader
@@ -19,7 +19,6 @@ from ag_contrib.config.models import (
     ExactMatchExpectedStudentFile,
     ExpectedStudentFile,
     FnmatchExpectedStudentFile,
-    InstructorFileConfig,
     MultiCmdTestCaseConfig,
     SingleCmdTestCaseConfig,
     TestSuiteConfig,
@@ -48,21 +47,13 @@ class _ProjectSaver:
 
         self.client = HTTPClient(get_api_token(token_file), base_url)
 
-        course_data = self.config.project.course
-        self.course = do_get(
+        self.course, project = get_project_from_course(
             self.client,
-            f"/api/course/{course_data.name}/{course_data.semester}/{course_data.year}/",
-            ag_schema.Course,
+            self.config.project.course.name,
+            self.config.project.course.semester,
+            self.config.project.course.year,
+            self.config.project.name,
         )
-
-        projects = do_get_list(
-            self.client,
-            f'/api/courses/{self.course["pk"]}/projects/',
-            ag_schema.Project,
-        )
-        # print(projects)
-
-        project = next((p for p in projects if p["name"] == self.config.project.name), None)
         self.project_pk = project["pk"] if project is not None else None
 
     def save_project(self):
@@ -703,42 +694,3 @@ class _ProjectSaver:
 #         string = string.replace(placeholder, str(replacement))
 
 #     return string
-
-
-T = TypeVar("T")
-
-
-def do_get(client: HTTPClient, url: str, response_type: type[T]) -> T:
-    response = client.get(url)
-    check_response_status(response)
-    return response_to_schema_obj(response, response_type)
-
-
-def do_post(client: HTTPClient, url: str, request_body: object, response_type: type[T]) -> T:
-    response = client.post(url, json=request_body)
-    check_response_status(response)
-    return response_to_schema_obj(response, response_type)
-
-
-def do_patch(
-    client: HTTPClient, url: str, request_body: Mapping[str, object] | str, response_type: type[T]
-) -> T:
-    if isinstance(request_body, dict):
-        response = client.patch(url, json=request_body)
-    else:
-        response = client.patch(
-            url, data=request_body, headers={"Content-Type": "application/json"}
-        )
-    check_response_status(response)
-    return response_to_schema_obj(response, response_type)
-
-
-def response_to_schema_obj(response: Response, class_: type[T]) -> T:
-    return TypeAdapter(class_).validate_python(response.json())
-
-
-def do_get_list(client: HTTPClient, url: str, element_type: type[T]) -> list[T]:
-    response = client.get(url)
-    check_response_status(response)
-    type_adapter = TypeAdapter(element_type)
-    return [type_adapter.validate_python(obj) for obj in response.json()]

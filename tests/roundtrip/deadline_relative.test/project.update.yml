@@ -1,0 +1,11 @@
+project:
+  name: Test Project
+  course:
+    name: Test Course
+    semester: Summer
+    year: 2014
+    settings:
+      deadline:
+        cutoff_type: "relative"
+        deadline: Feb 9, 2021
+        grace_period: 42m

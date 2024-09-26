@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-from collections.abc import Mapping
 import datetime
 import itertools
 import re
 import zoneinfo
+from collections.abc import Mapping
 from pathlib import Path
 from typing import Annotated, Any, Final, Literal, TypeAlias, cast
 from zoneinfo import ZoneInfo
@@ -23,7 +23,9 @@ from pydantic import (
     computed_field,
     field_serializer,
     field_validator,
+    model_validator,
 )
+from tzlocal import get_localzone
 
 from ag_contrib.config.generated import schema as ag_schema
 
@@ -111,23 +113,17 @@ def validate_time(value: object) -> datetime.time | None:
     return parsed.time()
 
 
-class ProjectSettings(BaseModel):
-    timezone: Annotated[
-        ZoneInfo,
-        PlainValidator(validate_timezone),
-        PlainSerializer(serialize_timezone),
-    ]
-
-    guests_can_submit: Annotated[bool, Field(alias="anyone_with_link_can_submit")] = False
+class DeadlineWithRelativeCutoff(BaseModel):
+    cutoff_type: Literal['relative'] = 'relative'
     deadline: Annotated[
-        datetime.datetime | None,
+        datetime.datetime,
         PlainValidator(validate_datetime),
         WrapSerializer(serialize_datetime, when_used="unless-none"),
     ] = _seven_days_from_now()
-    grace_period: datetime.timedelta = datetime.timedelta(hours=0)
+    cutoff: datetime.timedelta = datetime.timedelta(hours=0)
 
-    @field_serializer("grace_period")
-    def serialize_grace_period(self, value: datetime.timedelta) -> str:
+    @field_serializer("cutoff")
+    def serialize_cutoff(self, value: datetime.timedelta) -> str:
         days = value.days
         hours = value.seconds // 3600
         minutes = value.seconds % 60
@@ -144,9 +140,9 @@ class ProjectSettings(BaseModel):
 
         return result
 
-    @field_validator("grace_period", mode="plain")
+    @field_validator("cutoff", mode="plain")
     @classmethod
-    def validate_grace_period(cls, value: object) -> datetime.timedelta:
+    def validate_cutoff(cls, value: object) -> datetime.timedelta:
         error_msg = 'Expected a time string in the format "XhXm"'
         if not isinstance(value, str):
             raise ValueError(error_msg)
@@ -167,6 +163,53 @@ class ProjectSettings(BaseModel):
             minutes=int(matches.get("minutes", 0)),
         )
 
+
+class DeadlineWithFixedCutoff(BaseModel):
+    cutoff_type: Literal['fixed'] = 'fixed'
+
+    deadline: Annotated[
+        datetime.datetime,
+        PlainValidator(validate_datetime),
+        WrapSerializer(serialize_datetime, when_used="unless-none"),
+    ] = _seven_days_from_now()
+
+    cutoff: Annotated[
+        datetime.datetime,
+        PlainValidator(validate_datetime),
+        WrapSerializer(serialize_datetime, when_used="unless-none"),
+    ] = _seven_days_from_now()
+
+    @model_validator(mode='after')
+    def validate_cutoff(self):
+        if self.cutoff < self.deadline:
+            raise ValueError('A fixed cutoff must be >= the deadline.')
+
+        return self
+
+
+class DeadlineWithNoCutoff(BaseModel):
+    cutoff_type: Literal['none'] = 'none'
+
+    deadline: Annotated[
+        datetime.datetime,
+        PlainValidator(validate_datetime),
+        WrapSerializer(serialize_datetime, when_used="unless-none"),
+    ] = _seven_days_from_now()
+
+
+class ProjectSettings(BaseModel):
+    timezone: Annotated[
+        ZoneInfo,
+        PlainValidator(validate_timezone),
+        PlainSerializer(serialize_timezone),
+    ] = get_localzone()
+
+    guests_can_submit: Annotated[bool, Field(alias="anyone_with_link_can_submit")] = False
+    deadline: Annotated[
+        DeadlineWithRelativeCutoff | DeadlineWithFixedCutoff | DeadlineWithNoCutoff,
+        Field(discriminator='cutoff_type'),
+    ] | None = DeadlineWithRelativeCutoff()
+
     allow_late_days: bool = False
 
     # Future: we can probably use a serialization context to serialize
@@ -177,15 +220,23 @@ class ProjectSettings(BaseModel):
         if self.deadline is None:
             return None
 
-        return self.deadline.replace(tzinfo=self.timezone).isoformat()
+        return self.deadline.deadline.replace(tzinfo=self.timezone).isoformat()
 
     @computed_field
     @property
     def closing_time(self) -> str | None:
-        if self.deadline is None:
-            return None
+        match(self.deadline):
+            case DeadlineWithRelativeCutoff(deadline=deadline, cutoff=cutoff):
+                return self._deadline_to_iso_str(deadline + cutoff)
+            case DeadlineWithFixedCutoff(deadline=_, cutoff=cutoff):
+                return self._deadline_to_iso_str(cutoff)
+            case DeadlineWithNoCutoff(deadline=deadline):
+                return None
+            case None:
+                return None
 
-        return (self.deadline + self.grace_period).replace(tzinfo=self.timezone).isoformat()
+    def _deadline_to_iso_str(self, deadline: datetime.datetime) -> str:
+        return deadline.replace(tzinfo=self.timezone).isoformat()
 
     ultimate_submission_policy: Annotated[
         Literal["most_recent", "best"], Field(alias="final_graded_submission_policy")
