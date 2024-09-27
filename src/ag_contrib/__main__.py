@@ -7,8 +7,8 @@ from typing import get_args
 
 from .config.generated.schema import Semester
 from .config.init_project import init_project
-from .config.save_project import save_project
 from .config.load_project import load_project
+from .config.save_project import save_project
 
 
 def main():
@@ -39,9 +39,7 @@ def parse_args():
 
     init_project_parser = subparsers.add_parser("init")
     init_project_parser.add_argument("course_name")
-    init_project_parser.add_argument(
-        "course_term", choices=get_args(Semester)
-    )
+    init_project_parser.add_argument("course_term", choices=get_args(Semester))
     init_project_parser.add_argument("course_year")
     init_project_parser.add_argument("project_name")
     init_project_parser.add_argument("--config_file", "-f", default=DEFAULT_config_file)
@@ -53,9 +51,7 @@ def parse_args():
 
     load_project_parser = subparsers.add_parser("load")
     load_project_parser.add_argument("course_name")
-    load_project_parser.add_argument(
-        "course_term", choices=get_args(Semester)
-    )
+    load_project_parser.add_argument("course_term", choices=get_args(Semester))
     load_project_parser.add_argument("course_year")
     load_project_parser.add_argument("project_name")
     load_project_parser.add_argument("output_file")

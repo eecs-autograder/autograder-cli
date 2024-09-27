@@ -1,4 +1,5 @@
 from pathlib import Path
+
 import yaml
 
 from ag_contrib.config.generated.schema import Semester
@@ -30,7 +31,7 @@ def init_project(
         settings=ProjectSettings(),
         course=CourseSelection(name=course_name, semester=course_term, year=course_year),
         student_files=[
-            ExactMatchExpectedStudentFile(filename='hello.py'),
+            ExactMatchExpectedStudentFile(filename="hello.py"),
             FnmatchExpectedStudentFile(pattern="test_*.py", min_num_matches=1, max_num_matches=3),
         ],
         instructor_files=[InstructorFileConfig(local_path=Path("instructor_file.txt"))],

@@ -5,7 +5,7 @@ from pathlib import Path
 
 import yaml
 
-from .utils import do_get, do_get_list, do_patch, do_post, get_project_from_course
+from .utils import do_get_list, do_patch, do_post, get_project_from_course
 
 try:
     from yaml import CLoader as Loader
@@ -337,8 +337,12 @@ class _ProjectSaver:
                     "staff_description": test.staff_description,
                     "student_description": test.student_description,
                     "normal_fdbk_config": test.feedback.normal_fdbk_config,
-                    "ultimate_submission_fdbk_config": test.feedback.ultimate_submission_fdbk_config,
-                    "past_limit_submission_fdbk_config": test.feedback.past_limit_submission_fdbk_config,
+                    "ultimate_submission_fdbk_config": (
+                        test.feedback.ultimate_submission_fdbk_config
+                    ),
+                    "past_limit_submission_fdbk_config": (
+                        test.feedback.past_limit_submission_fdbk_config
+                    ),
                     "staff_viewer_fdbk_config": test.feedback.staff_viewer_fdbk_config,
                 }
 

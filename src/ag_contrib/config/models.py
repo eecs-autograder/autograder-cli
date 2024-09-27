@@ -114,7 +114,7 @@ def validate_time(value: object) -> datetime.time | None:
 
 
 class DeadlineWithRelativeCutoff(BaseModel):
-    cutoff_type: Literal['relative'] = 'relative'
+    cutoff_type: Literal["relative"] = "relative"
     deadline: Annotated[
         datetime.datetime,
         PlainValidator(validate_datetime),
@@ -165,7 +165,7 @@ class DeadlineWithRelativeCutoff(BaseModel):
 
 
 class DeadlineWithFixedCutoff(BaseModel):
-    cutoff_type: Literal['fixed'] = 'fixed'
+    cutoff_type: Literal["fixed"] = "fixed"
 
     deadline: Annotated[
         datetime.datetime,
@@ -179,16 +179,16 @@ class DeadlineWithFixedCutoff(BaseModel):
         WrapSerializer(serialize_datetime, when_used="unless-none"),
     ] = _seven_days_from_now()
 
-    @model_validator(mode='after')
+    @model_validator(mode="after")
     def validate_cutoff(self):
         if self.cutoff < self.deadline:
-            raise ValueError('A fixed cutoff must be >= the deadline.')
+            raise ValueError("A fixed cutoff must be >= the deadline.")
 
         return self
 
 
 class DeadlineWithNoCutoff(BaseModel):
-    cutoff_type: Literal['none'] = 'none'
+    cutoff_type: Literal["none"] = "none"
 
     deadline: Annotated[
         datetime.datetime,
@@ -205,10 +205,13 @@ class ProjectSettings(BaseModel):
     ] = get_localzone()
 
     guests_can_submit: Annotated[bool, Field(alias="anyone_with_link_can_submit")] = False
-    deadline: Annotated[
-        DeadlineWithRelativeCutoff | DeadlineWithFixedCutoff | DeadlineWithNoCutoff,
-        Field(discriminator='cutoff_type'),
-    ] | None = DeadlineWithRelativeCutoff()
+    deadline: (
+        Annotated[
+            DeadlineWithRelativeCutoff | DeadlineWithFixedCutoff | DeadlineWithNoCutoff,
+            Field(discriminator="cutoff_type"),
+        ]
+        | None
+    ) = DeadlineWithRelativeCutoff()
 
     allow_late_days: bool = False
 
@@ -225,7 +228,7 @@ class ProjectSettings(BaseModel):
     @computed_field
     @property
     def closing_time(self) -> str | None:
-        match(self.deadline):
+        match (self.deadline):
             case DeadlineWithRelativeCutoff(deadline=deadline, cutoff=cutoff):
                 return self._deadline_to_iso_str(deadline + cutoff)
             case DeadlineWithFixedCutoff(deadline=_, cutoff=cutoff):

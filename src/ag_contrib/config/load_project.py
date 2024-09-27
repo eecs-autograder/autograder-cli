@@ -28,7 +28,7 @@ def load_project(
     )
 
     hard_deadline = project_data.get("closing_time", None)
-    soft_deadline = project_data['soft_closing_time']
+    soft_deadline = project_data["soft_closing_time"]
     if hard_deadline is None and soft_deadline is None:
         deadline = None
         grace_period = 0
@@ -38,9 +38,7 @@ def load_project(
         if soft_deadline is None:
             soft_deadline = hard_deadline
 
-
         grace_period
-
 
     settings = ProjectSettings(
         timezone=project_data["submission_limit_reset_timezone"],

@@ -1,7 +1,12 @@
 set -xe
 
-isort --check src test
-black --check src test
-pycodestyle src test
-pydocstyle src test
+script_dir=$(dirname "$(realpath $0)")
+
+isort --check src tests
+black --check src tests
+pycodestyle \
+    --exclude=generated,tests/local_stack \
+    --ignore=W503,E133,E704,E501 \
+    src tests
+pydocstyle src tests
 pyright

@@ -20,8 +20,7 @@ def get_project_from_course(
     project_name: str,
     *,
     raise_if_not_found: Literal[True],
-) -> tuple[ag_schema.Course, ag_schema.Project]:
-    ...
+) -> tuple[ag_schema.Course, ag_schema.Project]: ...
 
 
 @overload
@@ -33,8 +32,7 @@ def get_project_from_course(
     project_name: str,
     *,
     raise_if_not_found: Literal[False] = False,
-) -> tuple[ag_schema.Course, ag_schema.Project | None]:
-    ...
+) -> tuple[ag_schema.Course, ag_schema.Project | None]: ...
 
 
 def get_project_from_course(
@@ -61,8 +59,10 @@ def get_project_from_course(
     project = next((p for p in projects if p["name"] == project_name), None)
 
     if project is None and raise_if_not_found:
-        raise AGConfigError(f'Project "{project_name}" not found on course '
-                            f'"{course_name} {course_term} {course_year}"')
+        raise AGConfigError(
+            f'Project "{project_name}" not found on course '
+            f'"{course_name} {course_term} {course_year}"'
+        )
 
     return course, project
 

@@ -12,18 +12,16 @@ from . import utils
 _HeadersMapping: TypeAlias = Mapping[str, str | bytes]
 if TYPE_CHECKING:
     from _typeshed import Incomplete
-    from requests.sessions import (
-        RequestsCookieJar,
-        _Auth,  # pyright: ignore[reportPrivateUsage]
-        _Cert,  # pyright: ignore[reportPrivateUsage]
-        _Data,  # pyright: ignore[reportPrivateUsage]
-        _Files,  # pyright: ignore[reportPrivateUsage]
-        _HooksInput,  # pyright: ignore[reportPrivateUsage]
-        _Params,  # pyright: ignore[reportPrivateUsage]
-        _TextMapping,  # pyright: ignore[reportPrivateUsage]
-        _Timeout,  # pyright: ignore[reportPrivateUsage]
-        _Verify,  # pyright: ignore[reportPrivateUsage]
-    )
+    from requests.sessions import _Auth  # pyright: ignore[reportPrivateUsage]
+    from requests.sessions import _Cert  # pyright: ignore[reportPrivateUsage]
+    from requests.sessions import _Data  # pyright: ignore[reportPrivateUsage]
+    from requests.sessions import _Files  # pyright: ignore[reportPrivateUsage]
+    from requests.sessions import _HooksInput  # pyright: ignore[reportPrivateUsage]
+    from requests.sessions import _Params  # pyright: ignore[reportPrivateUsage]
+    from requests.sessions import _TextMapping  # pyright: ignore[reportPrivateUsage]
+    from requests.sessions import _Timeout  # pyright: ignore[reportPrivateUsage]
+    from requests.sessions import _Verify  # pyright: ignore[reportPrivateUsage]
+    from requests.sessions import RequestsCookieJar
 
     class RequestKwargs(TypedDict, total=False):
         params: _Params | None
@@ -122,7 +120,7 @@ class HTTPClient:
 def check_response_status(response: requests.Response):
     if not response.ok:
         if 500 <= response.status_code < 600:
-            print(f'{response.status_code}: {response.reason}')
+            print(f"{response.status_code}: {response.reason}")
         else:
             try:
                 print(response.json())
