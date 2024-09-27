@@ -2,7 +2,6 @@ import copy
 import itertools
 from collections.abc import Mapping
 from pathlib import Path
-from zoneinfo import ZoneInfo
 
 import yaml
 
@@ -24,7 +23,6 @@ from ag_contrib.config.models import (
     ExpectedStudentFile,
     FnmatchExpectedStudentFile,
     MultiCmdTestCaseConfig,
-    ProjectSettings,
     SingleCmdTestCaseConfig,
     TestSuiteConfig,
 )
@@ -74,10 +72,13 @@ class _ProjectSaver:
             print("Project created")
 
         print(f"Updating project {self.config.project.name} settings...")
-        request_body = self.config.project.settings.model_dump(
-            exclude_unset=True,
-            exclude={"send_email_receipts", "deadline", "honor_pledge"},
-        ) | self._make_legacy_project_api_dict()
+        request_body = (
+            self.config.project.settings.model_dump(
+                exclude_unset=True,
+                exclude={"send_email_receipts", "deadline", "honor_pledge"},
+            )
+            | self._make_legacy_project_api_dict()
+        )
         do_patch(self.client, f"/api/projects/{self.project_pk}/", request_body, ag_schema.Project)
         print("Project settings updated")
 
@@ -89,18 +90,18 @@ class _ProjectSaver:
 
     def _make_legacy_project_api_dict(self) -> ag_schema.UpdateProject:
         result: ag_schema.UpdateProject = {
-            'submission_limit_reset_timezone': self.config.project.timezone.key
+            "submission_limit_reset_timezone": self.config.project.timezone.key
         }
         match (self.config.project.settings.deadline):
             case DeadlineWithRelativeCutoff(deadline=deadline, cutoff=cutoff):
-                result['soft_closing_time'] = deadline.isoformat()
-                result['closing_time'] = (deadline + cutoff).isoformat()
+                result["soft_closing_time"] = deadline.isoformat()
+                result["closing_time"] = (deadline + cutoff).isoformat()
             case DeadlineWithFixedCutoff(deadline=deadline, cutoff=cutoff):
-                result['soft_closing_time'] = deadline.isoformat()
-                result['closing_time'] = cutoff.isoformat()
+                result["soft_closing_time"] = deadline.isoformat()
+                result["closing_time"] = cutoff.isoformat()
             case DeadlineWithNoCutoff(deadline=deadline):
-                result['soft_closing_time'] = deadline.isoformat()
-                result['closing_time'] = None
+                result["soft_closing_time"] = deadline.isoformat()
+                result["closing_time"] = None
             case None:
                 pass
 
@@ -340,7 +341,8 @@ class _ProjectSaver:
                     )
                     print("      Updated")
             case MultiCmdTestCaseConfig():
-                for cmd in test.commands:
+                # FIXME
+                for _ in test.commands:
                     pass
 
     def _make_save_test_case_request_body(

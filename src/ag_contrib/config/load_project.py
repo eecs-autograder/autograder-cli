@@ -16,7 +16,7 @@ from .models import (
     validate_datetime,
     validate_timezone,
 )
-from .utils import do_get, get_project_from_course, write_yaml
+from .utils import get_project_from_course, write_yaml
 
 
 def load_project(

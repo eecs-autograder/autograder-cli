@@ -1,10 +1,10 @@
-from typing import overload
-from zoneinfo import ZoneInfo
-import zoneinfo
 import datetime
 import re
+import zoneinfo
+from typing import overload
+from zoneinfo import ZoneInfo
+
 from dateutil.parser import parse as parse_datetime
-from pydantic import SerializationInfo, SerializerFunctionWrapHandler, ValidationInfo
 
 
 def validate_time(value: object) -> datetime.time | None:
@@ -63,36 +63,24 @@ def serialize_duration(value: datetime.timedelta) -> str:
 
 
 @overload
-def validate_datetime(value: str, info: ValidationInfo | None = None) -> datetime.datetime: ...
+def validate_datetime(value: str) -> datetime.datetime: ...
 
 
 @overload
-def validate_datetime(value: None, info: ValidationInfo | None = None) -> None: ...
+def validate_datetime(value: None) -> None: ...
 
 
 @overload
-def validate_datetime(
-    value: object, info: ValidationInfo | None = None
-) -> datetime.datetime | None: ...
+def validate_datetime(value: object) -> datetime.datetime | None: ...
 
 
-def validate_datetime(
-    value: object, info: ValidationInfo | None = None
-) -> datetime.datetime | None:
+def validate_datetime(value: object) -> datetime.datetime | None:
     if value is None:
         return None
 
     parsed = parse_datetime(value) if isinstance(value, str) else value
     if not isinstance(parsed, datetime.datetime):
         raise ValueError("Unrecognized datetime format.")
-
-    if (
-        info is not None
-        and info.context is not None
-        and (timezone := info.context.get("timezone", None) is not None)
-    ):
-        assert isinstance(timezone, ZoneInfo)
-        parsed.replace(tzinfo=timezone)
 
     return parsed
 
