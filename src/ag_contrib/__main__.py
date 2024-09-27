@@ -54,6 +54,7 @@ def parse_args():
     load_project_parser.add_argument("course_term", choices=get_args(Semester))
     load_project_parser.add_argument("course_year")
     load_project_parser.add_argument("project_name")
+    load_project_parser.add_argument("deadline_cutoff_preference", choices=["relative", "fixed"])
     load_project_parser.add_argument("output_file")
     load_project_parser.set_defaults(func=load_project)
 

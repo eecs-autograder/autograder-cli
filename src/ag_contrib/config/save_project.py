@@ -2,6 +2,7 @@ import copy
 import itertools
 from collections.abc import Mapping
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 import yaml
 
@@ -16,10 +17,14 @@ import ag_contrib.config.generated.schema as ag_schema
 from ag_contrib.config.models import (
     AGConfig,
     AGConfigError,
+    DeadlineWithFixedCutoff,
+    DeadlineWithNoCutoff,
+    DeadlineWithRelativeCutoff,
     ExactMatchExpectedStudentFile,
     ExpectedStudentFile,
     FnmatchExpectedStudentFile,
     MultiCmdTestCaseConfig,
+    ProjectSettings,
     SingleCmdTestCaseConfig,
     TestSuiteConfig,
 )
@@ -69,10 +74,10 @@ class _ProjectSaver:
             print("Project created")
 
         print(f"Updating project {self.config.project.name} settings...")
-        request_body = self.config.project.settings.model_dump_json(
+        request_body = self.config.project.settings.model_dump(
             exclude_unset=True,
-            exclude={"timezone", "grace_period", "send_email_receipts", "deadline"},
-        )
+            exclude={"send_email_receipts", "deadline", "honor_pledge"},
+        ) | self._make_legacy_project_api_dict()
         do_patch(self.client, f"/api/projects/{self.project_pk}/", request_body, ag_schema.Project)
         print("Project settings updated")
 
@@ -81,6 +86,25 @@ class _ProjectSaver:
         self._load_sandbox_images()
         self._save_test_suites()
         pass
+
+    def _make_legacy_project_api_dict(self) -> ag_schema.UpdateProject:
+        result: ag_schema.UpdateProject = {
+            'submission_limit_reset_timezone': self.config.project.timezone.key
+        }
+        match (self.config.project.settings.deadline):
+            case DeadlineWithRelativeCutoff(deadline=deadline, cutoff=cutoff):
+                result['soft_closing_time'] = deadline.isoformat()
+                result['closing_time'] = (deadline + cutoff).isoformat()
+            case DeadlineWithFixedCutoff(deadline=deadline, cutoff=cutoff):
+                result['soft_closing_time'] = deadline.isoformat()
+                result['closing_time'] = cutoff.isoformat()
+            case DeadlineWithNoCutoff(deadline=deadline):
+                result['soft_closing_time'] = deadline.isoformat()
+                result['closing_time'] = None
+            case None:
+                pass
+
+        return result
 
     def _save_expected_student_files(self):
         assert self.project_pk is not None

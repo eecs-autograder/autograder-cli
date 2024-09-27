@@ -1,6 +1,6 @@
 from pathlib import Path
 
-import yaml
+from tzlocal import get_localzone
 
 from ag_contrib.config.generated.schema import Semester
 from ag_contrib.config.models import (
@@ -17,6 +17,8 @@ from ag_contrib.config.models import (
     TestSuiteConfig,
 )
 
+from .utils import write_yaml
+
 
 def init_project(
     course_name: str,
@@ -28,7 +30,8 @@ def init_project(
 ):
     project = ProjectConfig(
         name=project_name,
-        settings=ProjectSettings(),
+        timezone=get_localzone(),
+        settings=ProjectSettings(_timezone=get_localzone()),
         course=CourseSelection(name=course_name, semester=course_term, year=course_year),
         student_files=[
             ExactMatchExpectedStudentFile(filename="hello.py"),
@@ -49,26 +52,7 @@ def init_project(
         ],
     )
 
-    with open(config_file, "w") as f:
-        yaml.dump(
-            AGConfig(project=project).model_dump(
-                mode="json",
-                by_alias=True,
-                exclude={
-                    "project": {
-                        "settings": {
-                            "soft_closing_time",
-                            "closing_time",
-                            "submission_limit_reset_timezone",
-                            "send_email_on_submission_received",
-                            "send_email_on_non_deferred_tests_finished",
-                        },
-                    }
-                },
-            ),
-            f,
-            sort_keys=False,
-        )
+    write_yaml(AGConfig(project=project), config_file, exclude_defaults=False)
 
     blank_instructor_file = Path(config_file).parent / Path("instructor_file.txt")
     print(blank_instructor_file)

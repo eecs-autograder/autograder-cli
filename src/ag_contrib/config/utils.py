@@ -1,14 +1,39 @@
 from typing import Literal, Mapping, TypeVar, overload
 
+import yaml
 from pydantic import TypeAdapter
 from requests import Response
 
 import ag_contrib.config.generated.schema as ag_schema
 
 from ..http_client import HTTPClient, check_response_status
-from .models import AGConfigError
+from .models import AGConfig, AGConfigError
 
-T = TypeVar("T")
+
+def write_yaml(config: AGConfig, filename: str, *, exclude_defaults: bool):
+    with open(filename, "w") as f:
+        yaml.dump(
+            config.model_dump(
+                mode="json",
+                by_alias=True,
+                exclude_defaults=exclude_defaults,
+                exclude={
+                    "project": {
+                        "settings": {
+                            "soft_closing_time",
+                            "closing_time",
+                            "submission_limit_reset_timezone",
+                            "send_email_on_submission_received",
+                            "send_email_on_non_deferred_tests_finished",
+                            "use_honor_pledge",
+                            "honor_pledge_text",
+                        },
+                    }
+                },
+            ),
+            f,
+            sort_keys=False,
+        )
 
 
 @overload
@@ -65,6 +90,9 @@ def get_project_from_course(
         )
 
     return course, project
+
+
+T = TypeVar("T")
 
 
 def do_get(client: HTTPClient, url: str, response_type: type[T]) -> T:

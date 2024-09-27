@@ -8,5 +8,5 @@ pycodestyle \
     --exclude=generated,tests/local_stack \
     --ignore=W503,E133,E704,E501 \
     src tests
-pydocstyle src tests
+pydocstyle src tests/roundtrip tests/unit
 pyright

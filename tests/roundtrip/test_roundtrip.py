@@ -9,7 +9,7 @@ _ROUNDTRIP_TESTS_DIR = Path(__file__).parent.resolve()
 
 @pytest.fixture(scope="module", autouse=True)
 def apply_migrations():
-    _run_in_django_container("python3 manage.py migrate".split(), timeout=30)
+    _run_in_django_container("python3 manage.py migrate".split(), timeout=60)
 
 
 @pytest.fixture(autouse=True)
@@ -43,6 +43,8 @@ def test_roundtrip(roundtrip_test_dir: Path):
     print(roundtrip_test_dir)
 
     cmd_base = "python -m ag_contrib -u http://localhost:9002"
+    with open(roundtrip_test_dir / "deadline_cutoff_preference") as f:
+        deadline_cutoff_preference = f.read().strip()
 
     subprocess.run(
         cmd_base.split() + f"project save -f {roundtrip_test_dir / 'project.create.yml'}".split(),
@@ -52,7 +54,16 @@ def test_roundtrip(roundtrip_test_dir: Path):
 
     subprocess.run(
         cmd_base.split()
-        + f"project load -o {roundtrip_test_dir / 'project.create.actual.yml'}".split(),
+        + [
+            "project",
+            "load",
+            "Test Course",
+            "Summer",
+            "2014",
+            "Test Project",
+            deadline_cutoff_preference,
+            roundtrip_test_dir / "project.create.actual.yml",
+        ],
         check=True,
         timeout=30,
     )
@@ -74,7 +85,16 @@ def test_roundtrip(roundtrip_test_dir: Path):
 
     subprocess.run(
         cmd_base.split()
-        + f"project load -o {roundtrip_test_dir / 'project.update.actual.yml'}".split(),
+        + [
+            "project",
+            "load",
+            "Test Course",
+            "Summer",
+            "2014",
+            "Test Project",
+            deadline_cutoff_preference,
+            roundtrip_test_dir / "project.update.actual.yml",
+        ],
         check=True,
         timeout=30,
     )

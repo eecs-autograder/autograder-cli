@@ -20,3 +20,5 @@ EOM
 cp $test_dir/project.create.yml $test_dir/project.update.yml
 cp $test_dir/project.create.yml $test_dir/project.create.expected.yml
 cp $test_dir/project.update.yml $test_dir/project.update.expected.yml
+
+echo "relative" | cat > $test_dir/deadline_cutoff_preference

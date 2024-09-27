@@ -1,11 +1,12 @@
 project:
   name: Test Project
+  timezone: America/Chicago
   course:
     name: Test Course
     semester: Summer
     year: 2014
-    settings:
-      deadline:
-        cutoff_type: "relative"
-        deadline: Feb 9, 2021
-        grace_period: 42m
+  settings:
+    deadline:
+      cutoff_type: relative
+      deadline: Feb 9, 2021 6:45am
+      cutoff: 42m

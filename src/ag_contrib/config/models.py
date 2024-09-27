@@ -1,12 +1,12 @@
 from __future__ import annotations
-
+from typing_extensions import Self
 import datetime
 import itertools
 import re
 import zoneinfo
 from collections.abc import Mapping
 from pathlib import Path
-from typing import Annotated, Any, Final, Literal, TypeAlias, cast
+from typing import Annotated, Any, Final, Literal, TypeAlias, cast, overload
 from zoneinfo import ZoneInfo
 
 from dateutil.parser import parse as parse_datetime
@@ -19,15 +19,26 @@ from pydantic import (
     SerializationInfo,
     SerializerFunctionWrapHandler,
     Tag,
+    ValidationInfo,
     WrapSerializer,
     computed_field,
     field_serializer,
     field_validator,
+    model_serializer,
     model_validator,
 )
 from tzlocal import get_localzone
 
 from ag_contrib.config.generated import schema as ag_schema
+from .time_processing import (
+    serialize_datetime,
+    serialize_duration,
+    serialize_timezone,
+    validate_datetime,
+    validate_duration,
+    validate_time,
+    validate_timezone,
+)
 
 
 class AGConfigError(Exception):
@@ -45,27 +56,13 @@ class AGConfig(BaseModel):
     docker_images: dict[str, DockerImage] = {}
 
 
-def validate_timezone(timezone: object) -> ZoneInfo:
-    if isinstance(timezone, ZoneInfo):
-        return timezone
-
-    if not isinstance(timezone, str):
-        raise ValueError("Expected a string representing a timezone.")
-
-    # TODO/Future: Once the API has an endpoint of supported timezones,
-    # load from there instead.
-    if timezone not in zoneinfo.available_timezones():
-        raise ValueError("Unrecognized timezone.")
-
-    return ZoneInfo(timezone)
-
-
-def serialize_timezone(timezone: ZoneInfo) -> str:
-    return timezone.key
-
-
 class ProjectConfig(BaseModel):
     name: str
+    timezone: Annotated[
+        ZoneInfo,
+        PlainValidator(validate_timezone),
+        PlainSerializer(serialize_timezone),
+    ]
     course: CourseSelection
     settings: ProjectSettings
     student_files: list[ExpectedStudentFile] = []
@@ -79,105 +76,34 @@ class CourseSelection(BaseModel):
     year: int | None
 
 
-def _seven_days_from_now():
-    now = datetime.datetime.now().replace(minute=0, second=0, microsecond=0)
-    return now + datetime.timedelta(days=7)
-
-
-def validate_datetime(value: object) -> datetime.datetime | None:
-    if value is None:
-        return None
-
-    parsed = parse_datetime(value) if isinstance(value, str) else value
-    if not isinstance(parsed, datetime.datetime):
-        raise ValueError("Unrecognized datetime format.")
-    return parsed
-
-
-def serialize_datetime(
-    value: datetime.datetime,
-    handler: SerializerFunctionWrapHandler,
-    info: SerializationInfo,
-):
-    if info.by_alias:
-        return value.strftime("%b %d, %Y %I:%M%p")
-
-    return handler(value)
-
-
-def validate_time(value: object) -> datetime.time | None:
-    parsed = parse_datetime(value) if isinstance(value, str) else value
-    if not isinstance(parsed, datetime.datetime):
-        raise ValueError("Unrecognized time format.")
-
-    return parsed.time()
-
-
 class DeadlineWithRelativeCutoff(BaseModel):
-    cutoff_type: Literal["relative"] = "relative"
+    cutoff_type: Literal["relative"]
     deadline: Annotated[
         datetime.datetime,
         PlainValidator(validate_datetime),
-        WrapSerializer(serialize_datetime, when_used="unless-none"),
-    ] = _seven_days_from_now()
-    cutoff: datetime.timedelta = datetime.timedelta(hours=0)
-
-    @field_serializer("cutoff")
-    def serialize_cutoff(self, value: datetime.timedelta) -> str:
-        days = value.days
-        hours = value.seconds // 3600
-        minutes = value.seconds % 60
-
-        result = ""
-        if days:
-            result += f"{days}d"
-
-        if hours:
-            result += f"{hours}h"
-
-        if minutes:
-            result += f"{minutes}"
-
-        return result
-
-    @field_validator("cutoff", mode="plain")
-    @classmethod
-    def validate_cutoff(cls, value: object) -> datetime.timedelta:
-        error_msg = 'Expected a time string in the format "XhXm"'
-        if not isinstance(value, str):
-            raise ValueError(error_msg)
-
-        match = re.match(
-            r"""\s*(((?P<days>\d+)\s*d)?)
-            \s*(((?P<hours>\d+)\s*h)?)
-            \s*(((?P<minutes>\d+)\s*m)?)""",
-            value,
-            re.VERBOSE,
-        )
-        if match is None or not (matches := match.groupdict()):
-            raise ValueError(error_msg)
-
-        return datetime.timedelta(
-            days=int(matches.get("days", 0)),
-            hours=int(matches.get("hours", 0)),
-            minutes=int(matches.get("minutes", 0)),
-        )
+        PlainSerializer(serialize_datetime),
+    ]
+    cutoff: Annotated[
+        datetime.timedelta,
+        PlainValidator(validate_duration),
+        PlainSerializer(serialize_duration),
+    ] = datetime.timedelta(hours=0)
 
 
 class DeadlineWithFixedCutoff(BaseModel):
-    cutoff_type: Literal["fixed"] = "fixed"
+    cutoff_type: Literal["fixed"]
 
     deadline: Annotated[
         datetime.datetime,
         PlainValidator(validate_datetime),
-        WrapSerializer(serialize_datetime, when_used="unless-none"),
-    ] = _seven_days_from_now()
+        PlainSerializer(serialize_datetime, when_used="unless-none"),
+    ]
 
     cutoff: Annotated[
         datetime.datetime,
         PlainValidator(validate_datetime),
-        WrapSerializer(serialize_datetime, when_used="unless-none"),
-    ] = _seven_days_from_now()
+        PlainSerializer(serialize_datetime, when_used="unless-none"),
+    ]
 
     @model_validator(mode="after")
     def validate_cutoff(self):
@@ -188,22 +114,17 @@ class DeadlineWithFixedCutoff(BaseModel):
 
 
 class DeadlineWithNoCutoff(BaseModel):
-    cutoff_type: Literal["none"] = "none"
+    cutoff_type: Literal["none"]
 
     deadline: Annotated[
         datetime.datetime,
         PlainValidator(validate_datetime),
-        WrapSerializer(serialize_datetime, when_used="unless-none"),
-    ] = _seven_days_from_now()
+        PlainSerializer(serialize_datetime),
+    ]
 
 
 class ProjectSettings(BaseModel):
-    timezone: Annotated[
-        ZoneInfo,
-        PlainValidator(validate_timezone),
-        PlainSerializer(serialize_timezone),
-    ] = get_localzone()
-
+    _timezone: ZoneInfo
     guests_can_submit: Annotated[bool, Field(alias="anyone_with_link_can_submit")] = False
     deadline: (
         Annotated[
@@ -211,35 +132,13 @@ class ProjectSettings(BaseModel):
             Field(discriminator="cutoff_type"),
         ]
         | None
-    ) = DeadlineWithRelativeCutoff()
+    ) = DeadlineWithRelativeCutoff(
+        cutoff_type="relative",
+        deadline=datetime.datetime.now(get_localzone()).replace(minute=0, second=0, microsecond=0)
+        + datetime.timedelta(days=7),
+    )
 
     allow_late_days: bool = False
-
-    # Future: we can probably use a serialization context to serialize
-    # datetimes as ISO vs human readable
-    @computed_field
-    @property
-    def soft_closing_time(self) -> str | None:
-        if self.deadline is None:
-            return None
-
-        return self.deadline.deadline.replace(tzinfo=self.timezone).isoformat()
-
-    @computed_field
-    @property
-    def closing_time(self) -> str | None:
-        match (self.deadline):
-            case DeadlineWithRelativeCutoff(deadline=deadline, cutoff=cutoff):
-                return self._deadline_to_iso_str(deadline + cutoff)
-            case DeadlineWithFixedCutoff(deadline=_, cutoff=cutoff):
-                return self._deadline_to_iso_str(cutoff)
-            case DeadlineWithNoCutoff(deadline=deadline):
-                return None
-            case None:
-                return None
-
-    def _deadline_to_iso_str(self, deadline: datetime.datetime) -> str:
-        return deadline.replace(tzinfo=self.timezone).isoformat()
 
     ultimate_submission_policy: Annotated[
         Literal["most_recent", "best"], Field(alias="final_graded_submission_policy")
@@ -249,7 +148,7 @@ class ProjectSettings(BaseModel):
     max_group_size: int = 1
 
     submission_limit_per_day: int | None = None
-    allow_submissions_past_limit: bool = False
+    allow_submissions_past_limit: bool = True
     groups_combine_daily_submissions: bool = False
     submission_limit_reset_time: Annotated[
         datetime.time,
@@ -258,25 +157,29 @@ class ProjectSettings(BaseModel):
     ] = datetime.time(hour=0)
     num_bonus_submissions: int = 0
 
-    @computed_field
-    @property
-    def submission_limit_reset_timezone(self) -> str:
-        return self.timezone.key
-
-    send_email_receipts: bool = False
+    send_email_receipts: bool | Literal["on_received", "on_finish"] = False
 
     @computed_field
     @property
     def send_email_on_submission_received(self) -> bool:
-        return self.send_email_receipts
+        return self.send_email_receipts is True or self.send_email_receipts == "on_received"
 
     @computed_field
     @property
     def send_email_on_non_deferred_tests_finished(self) -> bool:
-        return self.send_email_receipts
+        return self.send_email_receipts is True or self.send_email_receipts == "on_finish"
 
-    use_honor_pledge: bool = False
-    honor_pledge_text: str = ""
+    honor_pledge: str | None = ""
+
+    @computed_field
+    @property
+    def use_honor_pledge(self) -> bool:
+        return self.honor_pledge is not None
+
+    @computed_field
+    @property
+    def honor_pledge_text(self) -> str:
+        return self.honor_pledge if self.honor_pledge is not None else ""
 
     total_submission_limit: int | None = None
 
