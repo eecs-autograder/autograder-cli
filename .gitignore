@@ -110,3 +110,4 @@ venv.bak/
 .vscode
 .DS_Store
 dist
+local_manual_testing

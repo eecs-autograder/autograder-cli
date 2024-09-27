@@ -1,4 +1,4 @@
 project_root=$(dirname "$(realpath $0)")/..
 
-docker compose -f $project_root/test/local_stack/docker-compose.yml $@
+docker compose -f $project_root/tests/local_stack/docker-compose.yml $@
 
