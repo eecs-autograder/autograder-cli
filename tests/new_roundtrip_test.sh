@@ -4,12 +4,14 @@ if [ -z "$1" ]; then
 fi
 
 test_dir=$(dirname "$(realpath $0)")/roundtrip/$1
+[[ $test_dir == *.test ]] || test_dir+=.test
 echo $test_dir
 mkdir -p $test_dir
 
 cat > $test_dir/project.create.yml <<- EOM
 project:
   name: Test Project
+  timezone: America/Chicago
   course:
     name: Test Course
     semester: Summer
