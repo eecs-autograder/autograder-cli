@@ -14,8 +14,10 @@ from pydantic import (
     PlainSerializer,
     PlainValidator,
     Tag,
+    ValidationInfo,
     WrapSerializer,
     computed_field,
+    field_validator,
     model_validator,
 )
 from tzlocal import get_localzone
@@ -60,6 +62,15 @@ class ProjectConfig(BaseModel):
     student_files: list[ExpectedStudentFile] = []
     instructor_files: list[InstructorFileConfig] = []
     test_suites: list[TestSuiteConfig] = []
+
+    @field_validator('settings', mode='before')
+    @classmethod
+    def allow_empty_settings(cls, value: object, info: ValidationInfo):
+        if value is None:
+            print(ProjectSettings(_timezone=info.data['timezone']))
+            return ProjectSettings(_timezone=info.data['timezone'])
+
+        return value
 
 
 class CourseSelection(BaseModel):
@@ -124,11 +135,7 @@ class ProjectSettings(BaseModel):
             Field(discriminator="cutoff_type"),
         ]
         | None
-    ) = DeadlineWithRelativeCutoff(
-        cutoff_type="relative",
-        deadline=datetime.datetime.now(get_localzone()).replace(minute=0, second=0, microsecond=0)
-        + datetime.timedelta(days=7),
-    )
+    ) = None
 
     allow_late_days: bool = False
 

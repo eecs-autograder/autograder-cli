@@ -1,3 +1,4 @@
+import datetime
 from pathlib import Path
 
 from tzlocal import get_localzone
@@ -6,6 +7,7 @@ from ag_contrib.config.generated.schema import Semester
 from ag_contrib.config.models import (
     AGConfig,
     CourseSelection,
+    DeadlineWithRelativeCutoff,
     ExactMatchExpectedStudentFile,
     FnmatchExpectedStudentFile,
     InstructorFileConfig,
@@ -31,7 +33,16 @@ def init_project(
     project = ProjectConfig(
         name=project_name,
         timezone=get_localzone(),
-        settings=ProjectSettings(_timezone=get_localzone()),
+        settings=ProjectSettings(
+            _timezone=get_localzone(),
+            deadline=DeadlineWithRelativeCutoff(
+                cutoff_type="relative",
+                deadline=datetime.datetime.now(get_localzone()).replace(
+                    minute=0, second=0, microsecond=0
+                )
+                + datetime.timedelta(days=7),
+            ),
+        ),
         course=CourseSelection(name=course_name, semester=course_term, year=course_year),
         student_files=[
             ExactMatchExpectedStudentFile(filename="hello.py"),

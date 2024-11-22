@@ -38,7 +38,9 @@ c.admins.add(user)
     _run_in_django_container(["python", "manage.py", "shell", "-c", clear_db])
 
 
-@pytest.mark.parametrize("roundtrip_test_dir", _ROUNDTRIP_TESTS_DIR.glob("*.test"))
+@pytest.mark.parametrize(
+    "roundtrip_test_dir", _ROUNDTRIP_TESTS_DIR.glob("*.test"), ids=lambda path: path.name
+)
 def test_roundtrip(roundtrip_test_dir: Path):
     print(roundtrip_test_dir)
 
