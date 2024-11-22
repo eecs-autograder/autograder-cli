@@ -43,8 +43,11 @@ def test_roundtrip(roundtrip_test_dir: Path):
     print(roundtrip_test_dir)
 
     cmd_base = "python -m ag_contrib -u http://localhost:9002"
-    with open(roundtrip_test_dir / "deadline_cutoff_preference") as f:
-        deadline_cutoff_preference = f.read().strip()
+    if (cutoff_preference_file := roundtrip_test_dir / "deadline_cutoff_preference").exists():
+        with open(cutoff_preference_file) as f:
+            deadline_cutoff_preference = ['-d', f.read().strip()]
+    else:
+        deadline_cutoff_preference = []
 
     subprocess.run(
         cmd_base.split() + f"project save -f {roundtrip_test_dir / 'project.create.yml'}".split(),
@@ -61,9 +64,9 @@ def test_roundtrip(roundtrip_test_dir: Path):
             "Summer",
             "2014",
             "Test Project",
-            deadline_cutoff_preference,
             roundtrip_test_dir / "project.create.actual.yml",
-        ],
+        ]
+        + deadline_cutoff_preference,
         check=True,
         timeout=30,
     )
@@ -92,9 +95,9 @@ def test_roundtrip(roundtrip_test_dir: Path):
             "Summer",
             "2014",
             "Test Project",
-            deadline_cutoff_preference,
             roundtrip_test_dir / "project.update.actual.yml",
-        ],
+        ]
+        + deadline_cutoff_preference,
         check=True,
         timeout=30,
     )
