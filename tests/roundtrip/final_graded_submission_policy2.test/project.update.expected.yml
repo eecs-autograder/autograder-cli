@@ -1,0 +1,9 @@
+project:
+  name: Test Project 954562c29e3143abbc7a7928b271b848
+  timezone: America/Chicago
+  course:
+    name: Test Course
+    semester: Summer
+    year: 2014
+  settings:
+    final_graded_submission_policy: best

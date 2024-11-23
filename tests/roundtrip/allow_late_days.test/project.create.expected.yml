@@ -1,0 +1,9 @@
+project:
+  name: Test Project 02265c24d86d4a66b2ebdb250aefb9b0
+  timezone: America/Chicago
+  course:
+    name: Test Course
+    semester: Summer
+    year: 2014
+  settings:
+    allow_late_days: true
