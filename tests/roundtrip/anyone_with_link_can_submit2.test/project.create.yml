@@ -1,0 +1,9 @@
+project:
+  name: Test Project e1cfab8fdab24ce7875dd175ebefdf02
+  timezone: America/Chicago
+  course:
+    name: Test Course
+    semester: Summer
+    year: 2014
+  settings:
+    anyone_with_link_can_submit: false

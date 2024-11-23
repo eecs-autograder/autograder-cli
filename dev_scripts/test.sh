@@ -1,2 +1,3 @@
 script_dir=$(dirname "$(realpath $0)")
-pytest --tb=short --ignore=$script_dir/../tests/local_stack $@
+python $script_dir/../tests/roundtrip/setup_db.py
+pytest -n auto --tb=short --ignore=$script_dir/../tests/local_stack $@

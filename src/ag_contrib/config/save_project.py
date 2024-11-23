@@ -79,6 +79,7 @@ class _ProjectSaver:
             )
             | self._make_legacy_project_api_dict()
         )
+        print(request_body)
         do_patch(self.client, f"/api/projects/{self.project_pk}/", request_body, ag_schema.Project)
         print("Project settings updated")
 

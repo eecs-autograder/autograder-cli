@@ -9,6 +9,7 @@ from zoneinfo import ZoneInfo
 
 from pydantic import (
     BaseModel,
+    ConfigDict,
     Discriminator,
     Field,
     PlainSerializer,
@@ -63,12 +64,11 @@ class ProjectConfig(BaseModel):
     instructor_files: list[InstructorFileConfig] = []
     test_suites: list[TestSuiteConfig] = []
 
-    @field_validator('settings', mode='before')
+    @field_validator("settings", mode="before")
     @classmethod
     def allow_empty_settings(cls, value: object, info: ValidationInfo):
         if value is None:
-            print(ProjectSettings(_timezone=info.data['timezone']))
-            return ProjectSettings(_timezone=info.data['timezone'])
+            return ProjectSettings(_timezone=info.data["timezone"])
 
         return value
 
@@ -127,6 +127,8 @@ class DeadlineWithNoCutoff(BaseModel):
 
 
 class ProjectSettings(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
     _timezone: ZoneInfo
     guests_can_submit: Annotated[bool, Field(alias="anyone_with_link_can_submit")] = False
     deadline: (

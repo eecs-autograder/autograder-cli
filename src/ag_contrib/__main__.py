@@ -59,7 +59,7 @@ def parse_args():
         "--deadline_cutoff_preference",
         "-d",
         choices=["relative", "fixed"],
-        default='fixed',
+        default="fixed",
     )
     load_project_parser.set_defaults(func=load_project)
 

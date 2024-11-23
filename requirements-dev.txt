@@ -36,6 +36,8 @@ email-validator==2.1.0.post1
     #   pydantic
 exceptiongroup==1.2.2
     # via pytest
+execnet==2.1.1
+    # via pytest-xdist
 frozenlist==1.4.1
     # via
     #   aiohttp
@@ -78,6 +80,8 @@ platformdirs==4.1.0
     # via black
 pluggy==1.5.0
     # via pytest
+psutil==6.1.0
+    # via pytest-xdist
 pycodestyle==2.11.1
     # via -r /home/jameslp/autograder/contrib/dev_scripts/../requirements-dev.in
 pydantic[email]==2.5.3
@@ -93,6 +97,10 @@ pydocstyle==6.3.0
 pyright==1.1.347
     # via -r /home/jameslp/autograder/contrib/dev_scripts/../requirements-dev.in
 pytest==8.3.3
+    # via
+    #   -r /home/jameslp/autograder/contrib/dev_scripts/../requirements-dev.in
+    #   pytest-xdist
+pytest-xdist[psutil]==3.6.1
     # via -r /home/jameslp/autograder/contrib/dev_scripts/../requirements-dev.in
 pyyaml==6.0.1
     # via

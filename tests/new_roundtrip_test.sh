@@ -8,9 +8,11 @@ test_dir=$(dirname "$(realpath $0)")/roundtrip/$1
 echo $test_dir
 mkdir -p $test_dir
 
+proj_uuid=$(python -c "import uuid; print(uuid.uuid4().hex)")
+
 cat > $test_dir/project.create.yml <<- EOM
 project:
-  name: Test Project
+  name: Test Project $proj_uuid
   timezone: America/Chicago
   course:
     name: Test Course

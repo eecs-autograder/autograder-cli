@@ -8,3 +8,4 @@ pyright
 types-requests
 types-PyYAML
 pytest
+pytest-xdist[psutil]
