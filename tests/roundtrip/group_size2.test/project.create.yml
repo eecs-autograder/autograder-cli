@@ -1,0 +1,10 @@
+project:
+  name: Test Project e5603a33b7254df7abb2d015ea7766b1
+  timezone: America/Chicago
+  course:
+    name: Test Course
+    semester: Summer
+    year: 2014
+  settings:
+    min_group_size: 1
+    max_group_size: 2
