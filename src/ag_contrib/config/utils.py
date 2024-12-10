@@ -16,6 +16,7 @@ def write_yaml(config: AGConfig, filename: str, *, exclude_defaults: bool):
             config.model_dump(
                 mode="json",
                 by_alias=True,
+                context={"write_yaml": True},
                 exclude_defaults=exclude_defaults,
                 exclude={
                     "project": {

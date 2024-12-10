@@ -14,10 +14,12 @@ from pydantic import (
     Field,
     PlainSerializer,
     PlainValidator,
+    SerializationInfo,
     Tag,
     ValidationInfo,
     WrapSerializer,
     computed_field,
+    field_serializer,
     field_validator,
     model_validator,
 )
@@ -28,6 +30,7 @@ from ag_contrib.config.generated import schema as ag_schema
 from .time_processing import (
     serialize_datetime,
     serialize_duration,
+    serialize_time,
     serialize_timezone,
     validate_datetime,
     validate_duration,
@@ -154,7 +157,7 @@ class ProjectSettings(BaseModel):
     submission_limit_reset_time: Annotated[
         datetime.time,
         PlainValidator(validate_time),
-        WrapSerializer(lambda value, _: value.strftime("%I:%M%p")),
+        PlainSerializer(serialize_time),
     ] = datetime.time(hour=0)
     num_bonus_submissions: int = 0
 

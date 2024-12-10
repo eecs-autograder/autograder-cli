@@ -4,11 +4,6 @@ from pathlib import Path
 import pytest
 import yaml
 
-try:
-    from yaml import CLoader as Loader
-except ImportError:
-    from yaml import Loader
-
 _ROUNDTRIP_TESTS_DIR = Path(__file__).parent.resolve()
 
 
@@ -33,7 +28,7 @@ def test_roundtrip(roundtrip_test_dir: Path):
     )
 
     with open(create_filename) as f:
-        raw = yaml.load(f, Loader=Loader)
+        raw = yaml.safe_load(f)
         project_name = raw["project"]["name"]
         course_name = raw["project"]["course"]["name"]
         course_semester = raw["project"]["course"]["semester"]

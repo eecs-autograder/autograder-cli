@@ -1,0 +1,10 @@
+project:
+  name: Test Project a4ff7918c7454efdb9282f35141e748d
+  timezone: America/Chicago
+  course:
+    name: Test Course
+    semester: Summer
+    year: 2014
+  settings:
+    allow_submissions_past_limit: false
+    submission_limit_reset_time: 11:59PM

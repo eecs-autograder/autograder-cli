@@ -16,6 +16,7 @@ from .models import (
     validate_datetime,
     validate_timezone,
 )
+from .time_processing import validate_time
 from .utils import get_project_from_course, write_yaml
 
 
@@ -61,6 +62,7 @@ def load_project(
         submission_limit_per_day=project_data["submission_limit_per_day"],
         allow_submissions_past_limit=project_data["allow_submissions_past_limit"],
         groups_combine_daily_submissions=project_data["groups_combine_daily_submissions"],
+        submission_limit_reset_time=validate_time(project_data["submission_limit_reset_time"]),
         num_bonus_submissions=project_data["num_bonus_submissions"],
         send_email_receipts=_process_email_receipts(project_data),
         honor_pledge=(

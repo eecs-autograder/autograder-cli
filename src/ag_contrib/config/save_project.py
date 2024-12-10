@@ -7,11 +7,6 @@ import yaml
 
 from .utils import do_get_list, do_patch, do_post, get_project_from_course
 
-try:
-    from yaml import CLoader as Loader
-except ImportError:
-    from yaml import Loader
-
 import ag_contrib.config.generated.schema as ag_schema
 from ag_contrib.config.models import (
     AGConfig,
@@ -41,7 +36,7 @@ class _ProjectSaver:
 
     def __init__(self, config_file: str, *, base_url: str, token_file: str):
         with open(config_file) as f:
-            self.config = AGConfig.model_validate(yaml.load(f, Loader=Loader))
+            self.config = AGConfig.model_validate(yaml.safe_load(f))
 
         self.project_config_dir = Path(config_file).parent
 

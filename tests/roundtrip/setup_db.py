@@ -42,5 +42,5 @@ def _run_in_django_container(cmd: list[LiteralString], timeout: int = 10):
     return subprocess.run(to_run, timeout=timeout, check=True)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     setup_db()
