@@ -5,8 +5,6 @@ from pathlib import Path
 
 import yaml
 
-from .utils import do_get_list, do_patch, do_post, get_project_from_course
-
 import ag_contrib.config.generated.schema as ag_schema
 from ag_contrib.config.models import (
     AGConfig,
@@ -23,6 +21,8 @@ from ag_contrib.config.models import (
 )
 from ag_contrib.http_client import HTTPClient, check_response_status
 from ag_contrib.utils import get_api_token
+
+from .utils import do_get_list, do_patch, do_post, get_project_from_course
 
 
 def save_project(config_file: str, *, base_url: str, token_file: str):
@@ -140,7 +140,7 @@ class _ProjectSaver:
     ) -> ag_schema.CreateExpectedStudentFile:
         match (obj):
             case ExactMatchExpectedStudentFile():
-                return {"pattern": obj.filename}
+                return {"pattern": obj}
             case FnmatchExpectedStudentFile():
                 return {
                     "pattern": obj.pattern,

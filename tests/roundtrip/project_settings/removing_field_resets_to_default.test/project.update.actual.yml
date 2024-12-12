@@ -10,6 +10,4 @@ project:
       cutoff_type: relative
       deadline: Jan 08, 2024 07:59PM
       cutoff: 1d4h2m
-    min_group_size: 2
     max_group_size: 3
-    num_bonus_submissions: 2

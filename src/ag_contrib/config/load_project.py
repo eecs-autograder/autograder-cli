@@ -1,6 +1,8 @@
 import warnings
 from typing import Literal
 
+from pydantic import TypeAdapter
+
 import ag_contrib.config.generated.schema as ag_schema
 from ag_contrib.http_client import HTTPClient
 from ag_contrib.utils import get_api_token
@@ -11,13 +13,13 @@ from .models import (
     DeadlineWithFixedCutoff,
     DeadlineWithNoCutoff,
     DeadlineWithRelativeCutoff,
+    ExpectedStudentFile,
     ProjectConfig,
     ProjectSettings,
     validate_datetime,
     validate_timezone,
 )
-from .time_processing import validate_time
-from .utils import get_project_from_course, write_yaml
+from .utils import do_get_list, get_project_from_course, write_yaml
 
 
 def load_project(
@@ -33,6 +35,7 @@ def load_project(
 ):
     client = HTTPClient(get_api_token(token_file), base_url)
 
+    print("Loading project settings...")
     _, project_data = get_project_from_course(
         client,
         course_name,
@@ -62,7 +65,6 @@ def load_project(
         submission_limit_per_day=project_data["submission_limit_per_day"],
         allow_submissions_past_limit=project_data["allow_submissions_past_limit"],
         groups_combine_daily_submissions=project_data["groups_combine_daily_submissions"],
-        submission_limit_reset_time=validate_time(project_data["submission_limit_reset_time"]),
         num_bonus_submissions=project_data["num_bonus_submissions"],
         send_email_receipts=_process_email_receipts(project_data),
         honor_pledge=(
@@ -70,6 +72,9 @@ def load_project(
         ),
         total_submission_limit=project_data["total_submission_limit"],
     )
+
+    print("Loading expected student files...")
+    student_file_data = _load_expected_student_files(client, project_data["pk"])
 
     write_yaml(
         AGConfig(
@@ -82,6 +87,7 @@ def load_project(
                     year=course_year,
                 ),
                 settings=settings,
+                student_files=student_file_data,
             )
         ),
         output_file,
@@ -139,3 +145,22 @@ def _process_email_receipts(project_data: ag_schema.Project):
         return "on_finish"
 
     return False
+
+
+def _load_expected_student_files(client: HTTPClient, project_pk: int) -> list[ExpectedStudentFile]:
+    student_file_data = do_get_list(
+        client,
+        f"/api/projects/{project_pk}/expected_student_files/",
+        ag_schema.ExpectedStudentFile,
+    )
+
+    return TypeAdapter(list[ExpectedStudentFile]).validate_python(
+        [
+            (
+                item["pattern"]
+                if item["min_num_matches"] == 1 and item["max_num_matches"] == 1
+                else item
+            )
+            for item in student_file_data
+        ]
+    )

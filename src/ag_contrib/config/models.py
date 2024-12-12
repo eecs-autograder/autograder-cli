@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import datetime
 import itertools
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 from pathlib import Path
 from typing import Annotated, Any, Final, Literal, TypeAlias, cast
 from zoneinfo import ZoneInfo
@@ -14,16 +14,12 @@ from pydantic import (
     Field,
     PlainSerializer,
     PlainValidator,
-    SerializationInfo,
     Tag,
     ValidationInfo,
-    WrapSerializer,
     computed_field,
-    field_serializer,
     field_validator,
     model_validator,
 )
-from tzlocal import get_localzone
 
 from ag_contrib.config.generated import schema as ag_schema
 
@@ -63,7 +59,7 @@ class ProjectConfig(BaseModel):
     ]
     course: CourseSelection
     settings: ProjectSettings
-    student_files: list[ExpectedStudentFile] = []
+    student_files: Sequence[ExpectedStudentFile] = []
     instructor_files: list[InstructorFileConfig] = []
     test_suites: list[TestSuiteConfig] = []
 
@@ -194,11 +190,7 @@ class DockerImage(BaseModel):
     exclude: list[Path] = []
 
 
-class ExactMatchExpectedStudentFile(BaseModel):
-    filename: str
-
-    def __str__(self) -> str:
-        return self.filename
+ExactMatchExpectedStudentFile: TypeAlias = str
 
 
 class FnmatchExpectedStudentFile(BaseModel):
@@ -213,17 +205,14 @@ class FnmatchExpectedStudentFile(BaseModel):
 def _get_expected_student_file_discriminator(
     value: object,
 ) -> Literal["exact_match", "fnmatch"] | None:
-    if isinstance(value, dict):
-        if "filename" in value:
-            return "exact_match"
+    if isinstance(value, str):
+        return "exact_match"
 
+    if isinstance(value, dict):
         if "pattern" in value:
             return "fnmatch"
 
         return None
-
-    if hasattr(value, "filename"):
-        return "exact_match"
 
     if hasattr(value, "pattern"):
         return "fnmatch"

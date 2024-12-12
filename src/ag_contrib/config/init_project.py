@@ -8,7 +8,6 @@ from ag_contrib.config.models import (
     AGConfig,
     CourseSelection,
     DeadlineWithRelativeCutoff,
-    ExactMatchExpectedStudentFile,
     FnmatchExpectedStudentFile,
     InstructorFileConfig,
     MultiCmdTestCaseConfig,
@@ -45,7 +44,7 @@ def init_project(
         ),
         course=CourseSelection(name=course_name, semester=course_term, year=course_year),
         student_files=[
-            ExactMatchExpectedStudentFile(filename="hello.py"),
+            "hello.py",
             FnmatchExpectedStudentFile(pattern="test_*.py", min_num_matches=1, max_num_matches=3),
         ],
         instructor_files=[InstructorFileConfig(local_path=Path("instructor_file.txt"))],

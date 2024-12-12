@@ -1,0 +1,14 @@
+project:
+  name: Test Project 52e34d11741049d9aabacb9c91113b86
+  timezone: America/Chicago
+  course:
+    name: Test Course
+    semester: Summer
+    year: 2014
+  settings:
+  student_files:
+  - file1.cpp
+  - other.java
+  - pattern: test_*.py
+    min_num_matches: 1
+    max_num_matches: 2
