@@ -1,0 +1,16 @@
+project:
+  name: Test Project 0f0a714015b44143873fe6f4b5bd119a
+  timezone: America/Chicago
+  course:
+    name: Test Course
+    semester: Summer
+    year: 2014
+  settings:
+    min_group_size: 2
+    max_group_size: 4
+    honor_pledge: Honors
+    deadline:
+      cutoff_type: relative
+      deadline: Jan 8, 2024 7:59pm
+      cutoff: 1d 4h 2m
+    num_bonus_submissions: 2

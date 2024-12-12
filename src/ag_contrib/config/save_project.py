@@ -69,7 +69,8 @@ class _ProjectSaver:
         print(f"Updating project {self.config.project.name} settings...")
         request_body = (
             self.config.project.settings.model_dump(
-                exclude_unset=True,
+                # We do NOT want to exclude unset. Unsetting a field
+                # should set it to the CLI default.
                 exclude={"send_email_receipts", "deadline", "honor_pledge"},
             )
             | self._make_legacy_project_api_dict()
