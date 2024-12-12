@@ -1,0 +1,9 @@
+project:
+  name: Test Project 16f5cd71dfc5473aaa8dff6c92e23548
+  timezone: America/Chicago
+  course:
+    name: Test Course
+    semester: Summer
+    year: 2014
+  settings:
+    honor_pledge:

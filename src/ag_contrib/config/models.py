@@ -173,7 +173,7 @@ class ProjectSettings(BaseModel):
     def send_email_on_non_deferred_tests_finished(self) -> bool:
         return self.send_email_receipts is True or self.send_email_receipts == "on_finish"
 
-    honor_pledge: str | None = ""
+    honor_pledge: str | None = None
 
     @computed_field
     @property
