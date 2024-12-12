@@ -8,7 +8,7 @@ _ROUNDTRIP_TESTS_DIR = Path(__file__).parent.resolve()
 
 
 @pytest.mark.parametrize(
-    "roundtrip_test_dir", _ROUNDTRIP_TESTS_DIR.glob("*.test"), ids=lambda path: path.name
+    "roundtrip_test_dir", _ROUNDTRIP_TESTS_DIR.glob("**/*.test"), ids=lambda path: path.name
 )
 def test_roundtrip(roundtrip_test_dir: Path):
     print(roundtrip_test_dir)

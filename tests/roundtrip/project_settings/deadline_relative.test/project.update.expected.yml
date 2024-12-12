@@ -1,0 +1,12 @@
+project:
+  name: Test Project de334c7bd76949a2a8151b49f8de5b21
+  timezone: America/Chicago
+  course:
+    name: Test Course
+    semester: Summer
+    year: 2014
+  settings:
+    deadline:
+      cutoff_type: relative
+      deadline: Feb 09, 2021 06:45AM
+      cutoff: 42m

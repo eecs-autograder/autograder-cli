@@ -1,0 +1,8 @@
+project:
+  name: Test Project 6a955344ceeb40a8871f1c71139cf9fa
+  timezone: America/Chicago
+  course:
+    name: Test Course
+    semester: Summer
+    year: 2014
+  settings: {}

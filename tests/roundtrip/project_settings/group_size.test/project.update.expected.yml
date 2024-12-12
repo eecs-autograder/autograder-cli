@@ -1,0 +1,9 @@
+project:
+  name: Test Project f65467ea70fd49e186ea9655cea1a2b6
+  timezone: America/Chicago
+  course:
+    name: Test Course
+    semester: Summer
+    year: 2014
+  settings:
+    max_group_size: 4

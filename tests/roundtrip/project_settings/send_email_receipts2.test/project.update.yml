@@ -1,0 +1,9 @@
+project:
+  name: Test Project 4d5f3fee5d9f4a47be3004a17ceb0c33
+  timezone: America/Chicago
+  course:
+    name: Test Course
+    semester: Summer
+    year: 2014
+  settings:
+    send_email_receipts: on_finish

@@ -1,0 +1,12 @@
+project:
+  name: Test Project 5f34e932e50f47e281f40897b6a07dcd
+  timezone: America/Chicago
+  course:
+    name: Test Course
+    semester: Summer
+    year: 2014
+  settings:
+    deadline:
+      cutoff_type: fixed
+      deadline: Nov 15, 2024 08:00PM
+      cutoff: Nov 16, 2024 08:00PM

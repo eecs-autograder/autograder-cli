@@ -1,0 +1,9 @@
+project:
+  name: Test Project e6f00a1e3fca4b2ab21319b6cb7d4982
+  timezone: America/Chicago
+  course:
+    name: Test Course
+    semester: Summer
+    year: 2014
+  settings:
+    num_bonus_submissions: 2
