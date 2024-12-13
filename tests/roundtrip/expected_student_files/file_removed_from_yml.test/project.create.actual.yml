@@ -1,0 +1,11 @@
+project:
+  name: Test Project 8e0a0d845f424555b6eb2e5b7513d66a
+  timezone: America/Chicago
+  course:
+    name: Test Course
+    semester: Summer
+    year: 2014
+  settings: {}
+  student_files:
+  - file1.cpp
+  - file2.cpp

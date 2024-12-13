@@ -114,9 +114,11 @@ class _ProjectSaver:
             ag_schema.ExpectedStudentFile,
         )
         self.student_files = {item["pattern"]: item for item in file_list}
+        patterns_in_yml: set[str] = set()
 
         for student_file_config in self.config.project.student_files:
             pattern = str(student_file_config)
+            patterns_in_yml.add(pattern)
             print("* Checking", pattern, "...")
             if pattern not in self.student_files:
                 do_post(
@@ -134,6 +136,15 @@ class _ProjectSaver:
                     ag_schema.ExpectedStudentFile,
                 )
                 print("  Updated", pattern)
+
+        patterns_not_in_yml = set(self.student_files) - patterns_in_yml
+        for pattern in patterns_not_in_yml:
+            print(
+                f"!! WARNING !! The expected student file {pattern} "
+                "is no longer present in the configuration file. "
+                "If you meant to rename or delete this file, "
+                "please do so through the web interface."
+            )
 
     def _get_expected_student_file_request_body(
         self, obj: ExpectedStudentFile
