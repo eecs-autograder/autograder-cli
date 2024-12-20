@@ -5,6 +5,7 @@ from typing import Literal
 from pydantic import TypeAdapter
 
 import ag_contrib.config.generated.schema as ag_schema
+from ag_contrib.config.time_processing import validate_time
 from ag_contrib.http_client import HTTPClient
 from ag_contrib.utils import get_api_token
 
@@ -71,6 +72,7 @@ def load_project(
         submission_limit_per_day=project_data["submission_limit_per_day"],
         allow_submissions_past_limit=project_data["allow_submissions_past_limit"],
         groups_combine_daily_submissions=project_data["groups_combine_daily_submissions"],
+        submission_limit_reset_time=validate_time(project_data["submission_limit_reset_time"]),
         num_bonus_submissions=project_data["num_bonus_submissions"],
         send_email_receipts=_process_email_receipts(project_data),
         honor_pledge=(
