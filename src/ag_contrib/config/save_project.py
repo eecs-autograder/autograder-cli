@@ -175,7 +175,7 @@ class _ProjectSaver:
         for file_config in self.config.project.instructor_files:
             print("* Checking", file_config.name, "...")
 
-            for local_file in self.project_config_dir.glob(str(file_config.local_path)):
+            for local_file in sorted(self.project_config_dir.glob(str(file_config.local_path))):
                 if local_file.is_dir():
                     continue
 

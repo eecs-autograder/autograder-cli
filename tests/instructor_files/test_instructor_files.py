@@ -11,14 +11,14 @@ def test_instructor_files():
 
     for stage in ["create", "update"]:
         dirname = _INSTRUCTOR_FILE_TESTS_DIR / stage
-        create_filename = dirname / "initial" / "project.yml"
+        config_filename = dirname / "initial" / "project.yml"
         subprocess.run(
-            cmd_base.split() + f"project save -f {create_filename}".split(),
+            cmd_base.split() + f"project save -f {config_filename}".split(),
             check=True,
             timeout=30,
         )
 
-        with open(create_filename) as f:
+        with open(config_filename) as f:
             raw = yaml.safe_load(f)
             project_name = raw["project"]["name"]
             course_name = raw["project"]["course"]["name"]
@@ -51,3 +51,17 @@ def test_instructor_files():
             ],
             check=True,
         )
+
+    # Check for a warning message when files are removed from the yaml
+    # file (including globs) but still exist on the autograder
+    config_filename = _INSTRUCTOR_FILE_TESTS_DIR / "remove_from_yml_only" / "project.yml"
+    result = subprocess.run(
+        cmd_base.split() + f"project save -f {config_filename}".split(),
+        check=True,
+        timeout=30,
+        capture_output=True,
+        text=True,
+    )
+    print(result.stdout, flush=True)
+    assert '!! WARNING !! The instructor file file1.txt' in result.stdout
+    assert '!! WARNING !! The instructor file test42.py' in result.stdout
