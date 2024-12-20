@@ -111,4 +111,4 @@ venv.bak/
 .DS_Store
 dist
 local_manual_testing
-tests/roundtrip/*/*.actual.yml
+tests/roundtrip/**/*.actual.yml

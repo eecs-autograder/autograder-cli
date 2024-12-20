@@ -1,3 +1,4 @@
+from pathlib import Path
 import warnings
 from typing import Literal
 
@@ -14,6 +15,7 @@ from .models import (
     DeadlineWithNoCutoff,
     DeadlineWithRelativeCutoff,
     ExpectedStudentFile,
+    InstructorFileConfig,
     ProjectConfig,
     ProjectSettings,
     validate_datetime,
@@ -34,6 +36,10 @@ def load_project(
     token_file: str,
 ):
     client = HTTPClient(get_api_token(token_file), base_url)
+
+    output_dir = Path(output_file).parent
+    output_dir.mkdir(parents=True, exist_ok=True)
+    print('Created project directory ', output_dir)
 
     print("Loading project settings...")
     _, project_data = get_project_from_course(
@@ -76,6 +82,9 @@ def load_project(
     print("Loading expected student files...")
     student_file_data = _load_expected_student_files(client, project_data["pk"])
 
+    print("Loading instructor files...")
+    instructor_file_data = _load_instructor_files(client, project_data["pk"], output_dir)
+
     write_yaml(
         AGConfig(
             project=ProjectConfig(
@@ -88,6 +97,7 @@ def load_project(
                 ),
                 settings=settings,
                 student_files=student_file_data,
+                instructor_files=instructor_file_data
             )
         ),
         output_file,
@@ -164,3 +174,31 @@ def _load_expected_student_files(client: HTTPClient, project_pk: int) -> list[Ex
             for item in student_file_data
         ]
     )
+
+
+def _load_instructor_files(client: HTTPClient, project_pk: int, output_dir: Path) -> list[InstructorFileConfig]:
+    instructor_file_data = do_get_list(
+        client,
+        f"/api/projects/{project_pk}/instructor_files/",
+        ag_schema.InstructorFile,
+    )
+
+    instructor_files: list[InstructorFileConfig] = []
+    for item in instructor_file_data:
+        _download_file(client, f"/api/instructor_files/{item['pk']}/content/", output_dir / item["name"])
+        instructor_files.append(InstructorFileConfig(local_path=Path(item["name"])))
+
+    return instructor_files
+
+
+def _download_file(client: HTTPClient, url: str, save_to: Path):
+    with client.get(url, stream=True) as r:
+        r.raise_for_status()
+        with open(save_to, 'wb') as f:
+            for chunk in r.iter_content(chunk_size=8192):
+                # If you have chunk encoded response uncomment if
+                # and set chunk_size parameter to None.
+                #if chunk:
+                f.write(chunk)
+
+    return save_to

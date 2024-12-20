@@ -170,26 +170,45 @@ class _ProjectSaver:
         )
         self.instructor_files = {item["name"]: item for item in file_list}
 
+        files_in_yml: set[str] = set()
+
         for file_config in self.config.project.instructor_files:
             print("* Checking", file_config.name, "...")
-            if file_config.name in self.instructor_files:
-                with open(self.project_config_dir / file_config.local_path, "rb") as f:
-                    response = self.client.put(
-                        f'/api/instructor_files/{self.instructor_files[file_config.name]["pk"]}/content/',
-                        files={"file_obj": f},
-                    )
-                check_response_status(response)
-                print("  Updated", file_config.name, "from", file_config.local_path)
-            else:
-                with open(self.project_config_dir / file_config.local_path, "rb") as f:
-                    response = self.client.post(
-                        f"/api/projects/{self.project_pk}/instructor_files/",
-                        files={"file_obj": f},
-                    )
-                check_response_status(response)
-                print("  Created", file_config.name, "from", file_config.local_path)
 
-            self.instructor_files[file_config.name] = response.json()
+            for local_file in self.project_config_dir.glob(str(file_config.local_path)):
+                if local_file.is_dir():
+                    continue
+
+                files_in_yml.add(local_file.name)
+
+                if local_file.name in self.instructor_files:
+                    with open(local_file, "rb") as f:
+                        response = self.client.put(
+                            f'/api/instructor_files/{self.instructor_files[local_file.name]["pk"]}/content/',
+                            files={"file_obj": f},
+                        )
+                    check_response_status(response)
+                    print("  Updated", local_file.name, "from", local_file)
+                else:
+                    with open(local_file, "rb") as f:
+                        response = self.client.post(
+                            f"/api/projects/{self.project_pk}/instructor_files/",
+                            files={"file_obj": f},
+                        )
+                    check_response_status(response)
+                    print("  Created", local_file.name, "from", local_file)
+
+                self.instructor_files[local_file.name] = response.json()
+
+        files_not_in_yml = set(self.instructor_files) - files_in_yml
+        for file_ in files_not_in_yml:
+            print(
+                f"!! WARNING !! The instructor file {file_} "
+                "is no longer present in the configuration file. "
+                "If you meant to rename or delete this file, "
+                "please do so through the web interface."
+            )
+
 
     def _load_sandbox_images(self):
         print("Loading sandbox images...")

@@ -1,0 +1,14 @@
+project:
+  name: Test Project 68ebb466b5504c8f97163dedc3ef89b9
+  timezone: America/Chicago
+  course:
+    name: Test Course
+    semester: Summer
+    year: 2014
+  settings: {}
+  instructor_files:
+  - local_path: file1.txt
+  - local_path: file2.txt
+  - local_path: test1.py
+  - local_path: test2.py
+  - local_path: test42.py
