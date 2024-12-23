@@ -237,18 +237,16 @@ class InstructorFileConfig(BaseModel):
 
 class TestSuiteConfig(BaseModel):
     name: str
+    sandbox_docker_image: str = "Default"
     instructor_files_needed: list[str] = []
     read_only_instructor_files: bool = True
     student_files_needed: list[str] = []
 
     allow_network_access: bool = False
     deferred: bool = False
-    sandbox_docker_image: str = "Default"
 
-    setup_suite_cmd: str = (
-        'echo "Configure your setup command here. Set to empty string to not use a setup command"'
-    )
-    setup_suite_cmd_name: str = "Setup"
+    setup_suite_cmd: str = ""
+    setup_suite_cmd_name: str = ""
     reject_submission_if_setup_fails: bool = False
 
     normal_fdbk_config: str | ag_schema.AGTestSuiteFeedbackConfig = "public"
@@ -258,6 +256,169 @@ class TestSuiteConfig(BaseModel):
 
     test_cases: list[SingleCmdTestCaseConfig | MultiCmdTestCaseConfig] = []
 
+    @classmethod
+    def from_api(cls, data: ag_schema.AGTestSuite) -> TestSuiteConfig:
+        return TestSuiteConfig(
+            name=data["name"],
+            sandbox_docker_image=data["sandbox_docker_image"]["display_name"],
+            instructor_files_needed=[file["name"] for file in data["instructor_files_needed"]],
+            read_only_instructor_files=data["read_only_instructor_files"],
+            student_files_needed=[file["pattern"] for file in data["student_files_needed"]],
+            allow_network_access=data["allow_network_access"],
+            deferred=data["deferred"],
+            setup_suite_cmd=data["setup_suite_cmd"],
+            setup_suite_cmd_name=data["setup_suite_cmd_name"],
+            reject_submission_if_setup_fails=data["reject_submission_if_setup_fails"],
+            normal_fdbk_config=data["normal_fdbk_config"],
+            ultimate_submission_fdbk_config=data["ultimate_submission_fdbk_config"],
+            past_limit_submission_fdbk_config=data["past_limit_submission_fdbk_config"],
+            staff_viewer_fdbk_config=data["staff_viewer_fdbk_config"],
+            test_cases=[_test_case_from_api(test_case) for test_case in data["ag_test_cases"]],
+        )
+
+
+def _test_case_from_api(data: ag_schema.AGTestCase):
+    num_cmds = len(data["ag_test_commands"])
+    if num_cmds == 0:
+        return SingleCmdTestCaseConfig(
+            name=data["name"],
+            type="single_cmd",
+            internal_admin_notes=data["internal_admin_notes"],
+            staff_description=data["staff_description"],
+            student_description=data["student_description"],
+            student_on_fail_description="",
+            cmd="",
+        )
+    elif num_cmds == 1:
+        cmd = data["ag_test_commands"][0]
+        return SingleCmdTestCaseConfig(
+            name=cmd["name"],
+            type="single_cmd",
+            internal_admin_notes=cmd["internal_admin_notes"],
+            staff_description=cmd["staff_description"],
+            student_description=cmd["student_description"],
+            student_on_fail_description=cmd["student_on_fail_description"],
+            cmd=cmd["cmd"],
+            input=StdinSettings(
+                source=cmd["stdin_source"],
+                text=cmd["stdin_text"],
+                instructor_file=_get_instructor_file_name(cmd["stdin_instructor_file"]),
+            ),
+            return_code=SingleCmdTestReturnCodeCheckSettings(
+                expected=cmd["expected_return_code"],
+                points=cmd["points_for_correct_return_code"],
+            ),
+            stdout=SingleCmdTestOutputSettings(
+                compare_with=cmd["expected_stdout_source"],
+                text=cmd["expected_stdout_text"],
+                instructor_file=_get_instructor_file_name(cmd["expected_stdout_instructor_file"]),
+                points=cmd["points_for_correct_stdout"],
+            ),
+            stderr=SingleCmdTestOutputSettings(
+                compare_with=cmd["expected_stderr_source"],
+                text=cmd["expected_stderr_text"],
+                instructor_file=_get_instructor_file_name(cmd["expected_stderr_instructor_file"]),
+                points=cmd["points_for_correct_stderr"],
+            ),
+            diff_options=DiffOptions(
+                ignore_case=cmd["ignore_case"],
+                ignore_whitespace=cmd["ignore_whitespace"],
+                ignore_whitespace_changes=cmd["ignore_whitespace_changes"],
+                ignore_blank_lines=cmd["ignore_blank_lines"],
+            ),
+            feedback=CommandFeedbackSettings(
+                normal_fdbk_config=cmd["normal_fdbk_config"],
+                first_failed_test_normal_fdbk_config=cmd["first_failed_test_normal_fdbk_config"],
+                ultimate_submission_fdbk_config=cmd["ultimate_submission_fdbk_config"],
+                past_limit_submission_fdbk_config=cmd["past_limit_submission_fdbk_config"],
+                staff_viewer_fdbk_config=cmd["staff_viewer_fdbk_config"],
+            ),
+            resources=ResourceLimits(
+                time_limit=cmd["time_limit"],
+                virtual_memory_limit=(
+                    cmd["virtual_memory_limit"] if cmd["use_virtual_memory_limit"] else None
+                ),
+                block_process_spawn=cmd["block_process_spawn"],
+            ),
+        )
+    else:
+        return MultiCmdTestCaseConfig(
+            name=data["name"],
+            type="multi_cmd",
+            internal_admin_notes=data["internal_admin_notes"],
+            staff_description=data["staff_description"],
+            student_description=data["student_description"],
+            feedback=MultiCmdTestCaseFdbkConfig(
+                normal_fdbk_config=data["normal_fdbk_config"],
+                past_limit_submission_fdbk_config=data["past_limit_submission_fdbk_config"],
+                staff_viewer_fdbk_config=data["staff_viewer_fdbk_config"],
+                ultimate_submission_fdbk_config=data["ultimate_submission_fdbk_config"],
+            ),
+            commands=[
+                MultiCommandConfig(
+                    name=cmd["name"],
+                    cmd=cmd["cmd"],
+                    input=StdinSettings(
+                        source=cmd["stdin_source"],
+                        text=cmd["stdin_text"],
+                        instructor_file=_get_instructor_file_name(cmd["stdin_instructor_file"]),
+                    ),
+                    return_code=MultiCmdTestReturnCodeCheckSettings(
+                        expected=cmd["expected_return_code"],
+                        points=cmd["points_for_correct_return_code"],
+                        deduction=cmd["deduction_for_wrong_return_code"],
+                    ),
+                    stdout=MultiCmdTestOutputSettings(
+                        compare_with=cmd["expected_stdout_source"],
+                        text=cmd["expected_stdout_text"],
+                        instructor_file=_get_instructor_file_name(
+                            cmd["expected_stdout_instructor_file"]
+                        ),
+                        points=cmd["points_for_correct_stdout"],
+                        deduction=cmd["deduction_for_wrong_stdout"],
+                    ),
+                    stderr=MultiCmdTestOutputSettings(
+                        compare_with=cmd["expected_stderr_source"],
+                        text=cmd["expected_stderr_text"],
+                        instructor_file=_get_instructor_file_name(
+                            cmd["expected_stderr_instructor_file"]
+                        ),
+                        points=cmd["points_for_correct_stderr"],
+                        deduction=cmd["deduction_for_wrong_stderr"],
+                    ),
+                    diff_options=DiffOptions(
+                        ignore_case=cmd["ignore_case"],
+                        ignore_whitespace=cmd["ignore_whitespace"],
+                        ignore_whitespace_changes=cmd["ignore_whitespace_changes"],
+                        ignore_blank_lines=cmd["ignore_blank_lines"],
+                    ),
+                    feedback=CommandFeedbackSettings(
+                        normal_fdbk_config=cmd["normal_fdbk_config"],
+                        first_failed_test_normal_fdbk_config=cmd[
+                            "first_failed_test_normal_fdbk_config"
+                        ],
+                        ultimate_submission_fdbk_config=cmd["ultimate_submission_fdbk_config"],
+                        past_limit_submission_fdbk_config=cmd["past_limit_submission_fdbk_config"],
+                        staff_viewer_fdbk_config=cmd["staff_viewer_fdbk_config"],
+                    ),
+                    resources=ResourceLimits(
+                        time_limit=cmd["time_limit"],
+                        virtual_memory_limit=(
+                            cmd["virtual_memory_limit"]
+                            if cmd["use_virtual_memory_limit"]
+                            else None
+                        ),
+                        block_process_spawn=cmd["block_process_spawn"],
+                    ),
+                )
+                for cmd in data["ag_test_commands"]
+            ],
+        )
+
+
+def _get_instructor_file_name(file: ag_schema.InstructorFile | None) -> str | None:
+    return file["name"] if file is not None else None
+
 
 class MultiCmdTestCaseConfig(BaseModel):
     name: str
@@ -266,8 +427,8 @@ class MultiCmdTestCaseConfig(BaseModel):
     internal_admin_notes: str = ""
     staff_description: str = ""
     student_description: str = ""
-    feedback: TestCaseAdvancedFdbkConfig = Field(
-        default_factory=lambda: TestCaseAdvancedFdbkConfig()
+    feedback: MultiCmdTestCaseFdbkConfig = Field(
+        default_factory=lambda: MultiCmdTestCaseFdbkConfig()
     )
     commands: list[MultiCommandConfig] = []
 
@@ -293,7 +454,7 @@ class MultiCmdTestCaseConfig(BaseModel):
         return new_tests
 
 
-class TestCaseAdvancedFdbkConfig(BaseModel):
+class MultiCmdTestCaseFdbkConfig(BaseModel):
     normal_fdbk_config: ag_schema.AGTestCaseFeedbackConfig = {
         "visible": True,
         "show_individual_commands": True,

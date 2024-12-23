@@ -209,7 +209,6 @@ class _ProjectSaver:
                 "please do so through the web interface."
             )
 
-
     def _load_sandbox_images(self):
         print("Loading sandbox images...")
         global_sandbox_images = do_get_list(
@@ -229,6 +228,7 @@ class _ProjectSaver:
         }
         print("\n".join(self.sandbox_images))
 
+    # FIXME: Save suite order
     def _save_test_suites(self):
         assert self.project_pk is not None
 

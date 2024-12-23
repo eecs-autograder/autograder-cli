@@ -54,7 +54,9 @@ def test_roundtrip(roundtrip_test_dir: Path):
 
     subprocess.run(
         [
-            "diff",
+            "dyff",
+            "between",
+            "--set-exit-code",
             roundtrip_test_dir / "project.create.expected.yml",
             roundtrip_test_dir / "project.create.actual.yml",
         ],
@@ -85,7 +87,9 @@ def test_roundtrip(roundtrip_test_dir: Path):
 
     subprocess.run(
         [
-            "diff",
+            "dyff",
+            "between",
+            "--set-exit-code",
             roundtrip_test_dir / "project.update.expected.yml",
             roundtrip_test_dir / "project.update.actual.yml",
         ],

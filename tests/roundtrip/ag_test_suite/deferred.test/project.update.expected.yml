@@ -1,0 +1,10 @@
+project:
+  name: Test Project 6ed476d74bc94c64b509f7cb89c11660
+  timezone: America/Chicago
+  course:
+    name: Test Course
+    semester: Summer
+    year: 2014
+  settings: {}
+  test_suites:
+  - name: An Suite

@@ -1,0 +1,11 @@
+project:
+  name: Test Project 0d9a9c6958be4a00bcfbe18adda8dbf8
+  timezone: America/Chicago
+  course:
+    name: Test Course
+    semester: Summer
+    year: 2014
+  settings: {}
+  test_suites:
+  - name: Suite 1
+    allow_network_access: True

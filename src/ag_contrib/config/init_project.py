@@ -51,6 +51,10 @@ def init_project(
         test_suites=[
             TestSuiteConfig(
                 name="Suite 1",
+                setup_suite_cmd=(
+                    'echo "Configure your setup command here. Set to empty string to not use a setup command"'
+                ),
+                setup_suite_cmd_name="Setup",
                 test_cases=[
                     SingleCmdTestCaseConfig(name="Test 1", cmd='echo "Hello 1!"'),
                     MultiCmdTestCaseConfig(
