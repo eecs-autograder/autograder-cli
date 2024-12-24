@@ -10,3 +10,4 @@ project:
   - name: Suite 1
     setup_cmd: bash compile.sh
     setup_label: Compile
+    reject_submission_if_setup_fails: true
