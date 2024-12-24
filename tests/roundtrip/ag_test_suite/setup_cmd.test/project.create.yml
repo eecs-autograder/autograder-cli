@@ -1,0 +1,12 @@
+project:
+  name: Test Project 302ecdada74642bbadfd0c7510f1037a
+  timezone: America/Chicago
+  course:
+    name: Test Course
+    semester: Summer
+    year: 2014
+  settings:
+  test_suites:
+  - name: Suite 1
+    setup_cmd: echo "Some very setup command"
+    setup_label: Welcome Message

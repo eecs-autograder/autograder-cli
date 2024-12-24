@@ -236,6 +236,8 @@ class InstructorFileConfig(BaseModel):
 
 
 class TestSuiteConfig(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
     name: str
     sandbox_docker_image: str = "Default"
     instructor_files_needed: list[str] = []
@@ -245,8 +247,8 @@ class TestSuiteConfig(BaseModel):
     allow_network_access: bool = False
     deferred: bool = False
 
-    setup_suite_cmd: str = ""
-    setup_suite_cmd_name: str = ""
+    setup_suite_cmd: Annotated[str, Field(alias="setup_cmd")] = ""
+    setup_suite_cmd_name: Annotated[str, Field(alias="setup_label")] = ""
     reject_submission_if_setup_fails: bool = False
 
     normal_fdbk_config: str | ag_schema.AGTestSuiteFeedbackConfig = "public"

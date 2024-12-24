@@ -75,7 +75,6 @@ class _ProjectSaver:
             )
             | self._make_legacy_project_api_dict()
         )
-        print(request_body)
         do_patch(self.client, f"/api/projects/{self.project_pk}/", request_body, ag_schema.Project)
         print("Project settings updated")
 
@@ -278,7 +277,8 @@ class _ProjectSaver:
     def _make_save_test_suite_request_body(self, suite_config: TestSuiteConfig):
         return suite_config.model_dump(
             exclude={"test_cases"},
-            exclude_unset=True,
+            # We do NOT want to exclude unset. Unsetting a field
+            # should set it to the CLI default.
         ) | {
             "sandbox_docker_image": self.sandbox_images[suite_config.sandbox_docker_image],
             "student_files_needed": [
