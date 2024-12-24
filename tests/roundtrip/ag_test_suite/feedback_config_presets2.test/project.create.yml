@@ -1,0 +1,29 @@
+project:
+  name: Test Project f1395cff73d44aeb9035b62d1d7bff60
+  timezone: America/Chicago
+  course:
+    name: Test Course
+    semester: Summer
+    year: 2014
+  settings:
+  test_suites:
+  - name: Suite 1
+    setup_cmd: echo "WAAAAA"
+    normal_fdbk_config:
+      visible: false
+      show_individual_tests: true
+      show_setup_return_code: false
+      show_setup_timed_out: false
+      show_setup_stdout: true
+      show_setup_stderr: true
+      show_student_description: false
+    ultimate_submission_fdbk_config:
+      visible: true
+      show_individual_tests: true
+      show_setup_return_code: true
+      show_setup_timed_out: false
+      show_setup_stdout: false
+      show_setup_stderr: true
+      show_student_description: true
+    past_limit_submission_fdbk_config: pass/fail
+    staff_viewer_fdbk_config: private
