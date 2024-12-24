@@ -269,12 +269,28 @@ class TestSuiteConfig(BaseModel):
             setup_suite_cmd=data["setup_suite_cmd"],
             setup_suite_cmd_name=data["setup_suite_cmd_name"],
             reject_submission_if_setup_fails=data["reject_submission_if_setup_fails"],
-            normal_fdbk_config=data["normal_fdbk_config"],
-            ultimate_submission_fdbk_config=data["ultimate_submission_fdbk_config"],
-            past_limit_submission_fdbk_config=data["past_limit_submission_fdbk_config"],
-            staff_viewer_fdbk_config=data["staff_viewer_fdbk_config"],
+            normal_fdbk_config=_suite_fdbk_dict_to_preset(data["normal_fdbk_config"]),
+            ultimate_submission_fdbk_config=_suite_fdbk_dict_to_preset(
+                data["ultimate_submission_fdbk_config"]
+            ),
+            past_limit_submission_fdbk_config=_suite_fdbk_dict_to_preset(
+                data["past_limit_submission_fdbk_config"]
+            ),
+            staff_viewer_fdbk_config=_suite_fdbk_dict_to_preset(data["staff_viewer_fdbk_config"]),
             test_cases=[_test_case_from_api(test_case) for test_case in data["ag_test_cases"]],
         )
+
+
+def _suite_fdbk_dict_to_preset(
+    fdbk_config: ag_schema.AGTestSuiteFeedbackConfig,
+) -> str | ag_schema.AGTestSuiteFeedbackConfig:
+    search_for = sorted(fdbk_config.items())
+
+    for preset_name, preset_value in BUILTIN_TEST_SUITE_FDBK_PRESETS.items():
+        if search_for == sorted(preset_value.items()):
+            return preset_name
+
+    return fdbk_config
 
 
 def _test_case_from_api(data: ag_schema.AGTestCase):
@@ -327,11 +343,19 @@ def _test_case_from_api(data: ag_schema.AGTestCase):
                 ignore_blank_lines=cmd["ignore_blank_lines"],
             ),
             feedback=CommandFeedbackSettings(
-                normal_fdbk_config=cmd["normal_fdbk_config"],
-                first_failed_test_normal_fdbk_config=cmd["first_failed_test_normal_fdbk_config"],
-                ultimate_submission_fdbk_config=cmd["ultimate_submission_fdbk_config"],
-                past_limit_submission_fdbk_config=cmd["past_limit_submission_fdbk_config"],
-                staff_viewer_fdbk_config=cmd["staff_viewer_fdbk_config"],
+                normal_fdbk_config=_cmd_fdbk_dict_to_preset(cmd["normal_fdbk_config"]),
+                first_failed_test_normal_fdbk_config=(
+                    _cmd_fdbk_dict_to_preset(cmd["first_failed_test_normal_fdbk_config"])
+                    if cmd["first_failed_test_normal_fdbk_config"] is not None
+                    else None
+                ),
+                ultimate_submission_fdbk_config=_cmd_fdbk_dict_to_preset(
+                    cmd["ultimate_submission_fdbk_config"]
+                ),
+                past_limit_submission_fdbk_config=_cmd_fdbk_dict_to_preset(
+                    cmd["past_limit_submission_fdbk_config"]
+                ),
+                staff_viewer_fdbk_config=_cmd_fdbk_dict_to_preset(cmd["staff_viewer_fdbk_config"]),
             ),
             resources=ResourceLimits(
                 time_limit=cmd["time_limit"],
@@ -393,13 +417,19 @@ def _test_case_from_api(data: ag_schema.AGTestCase):
                         ignore_blank_lines=cmd["ignore_blank_lines"],
                     ),
                     feedback=CommandFeedbackSettings(
-                        normal_fdbk_config=cmd["normal_fdbk_config"],
-                        first_failed_test_normal_fdbk_config=cmd[
-                            "first_failed_test_normal_fdbk_config"
-                        ],
-                        ultimate_submission_fdbk_config=cmd["ultimate_submission_fdbk_config"],
-                        past_limit_submission_fdbk_config=cmd["past_limit_submission_fdbk_config"],
-                        staff_viewer_fdbk_config=cmd["staff_viewer_fdbk_config"],
+                        normal_fdbk_config=_cmd_fdbk_dict_to_preset(cmd["normal_fdbk_config"]),
+                        first_failed_test_normal_fdbk_config=_cmd_fdbk_dict_to_preset(
+                            cmd["first_failed_test_normal_fdbk_config"]
+                        ),
+                        ultimate_submission_fdbk_config=_cmd_fdbk_dict_to_preset(
+                            cmd["ultimate_submission_fdbk_config"]
+                        ),
+                        past_limit_submission_fdbk_config=_cmd_fdbk_dict_to_preset(
+                            cmd["past_limit_submission_fdbk_config"]
+                        ),
+                        staff_viewer_fdbk_config=_cmd_fdbk_dict_to_preset(
+                            cmd["staff_viewer_fdbk_config"]
+                        ),
                     ),
                     resources=ResourceLimits(
                         time_limit=cmd["time_limit"],
@@ -418,6 +448,18 @@ def _test_case_from_api(data: ag_schema.AGTestCase):
 
 def _get_instructor_file_name(file: ag_schema.InstructorFile | None) -> str | None:
     return file["name"] if file is not None else None
+
+
+def _cmd_fdbk_dict_to_preset(
+    fdbk_config: ag_schema.AGTestCommandFeedbackConfig,
+) -> str | ag_schema.AGTestCommandFeedbackConfig:
+    search_for = sorted(fdbk_config.items())
+
+    for preset_name, preset_value in BUILTIN_CMD_FDBK_PRESETS.items():
+        if search_for == sorted(preset_value.items()):
+            return preset_name
+
+    return fdbk_config
 
 
 class MultiCmdTestCaseConfig(BaseModel):
@@ -562,7 +604,7 @@ class SingleCmdTestCaseConfig(BaseModel):
 
                 # See https://github.com/microsoft/pyright/discussions/1792
                 for key, value in cast(Mapping[Any, Any], overrides).items():
-                    if key not in new_data or not isinstance(key, str):
+                    if not isinstance(key, str) or key not in new_data:
                         raise AGConfigError(
                             f'Warning: unrecognized field "{key}" in '
                             'repeat override for test "{self.name}"'

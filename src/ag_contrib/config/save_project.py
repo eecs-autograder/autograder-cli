@@ -228,7 +228,6 @@ class _ProjectSaver:
         }
         print("\n".join(self.sandbox_images))
 
-    # FIXME: Save suite order
     def _save_test_suites(self):
         assert self.project_pk is not None
 
@@ -267,25 +266,14 @@ class _ProjectSaver:
                 for test in tests.do_repeat():
                     self._save_test_case(test, test_suites[suite_data.name]["pk"], test_cases)
 
-    #             if test_data.repeat:
-    #                 repeat_test_case(
-    #                     test_data.repeat,
-    #                     client,
-    #                     suite_data,
-    #                     test_data,
-    #                     test_suites=test_suites,
-    #                     test_cases=test_cases,
-    #                     instructor_files=instructor_files,
-    #                 )
-    #             else:
-    #                 create_or_update_test(
-    #                     client,
-    #                     suite_data,
-    #                     test_data,
-    #                     test_suites=test_suites,
-    #                     test_cases=test_cases,
-    #                     instructor_files=instructor_files,
-    #                 )
+        suite_order = [
+            test_suites[suite.name]["pk"] for suite in self.config.project.test_suites
+        ]
+        suite_order_response = self.client.put(
+            f"/api/projects/{self.project_pk}/ag_test_suites/order/",
+            json=suite_order,
+        )
+        check_response_status(suite_order_response)
 
     def _make_save_test_suite_request_body(self, suite_config: TestSuiteConfig):
         return suite_config.model_dump(

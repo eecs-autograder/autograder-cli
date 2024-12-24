@@ -6,3 +6,9 @@ project:
     semester: Summer
     year: 2014
   settings:
+  test_suites:
+  - name: Suite waluigi
+  - name: Suite egg
+  - name: Suite spam
+  - name: Suite time
+  - name: Suite sausage
