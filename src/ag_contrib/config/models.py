@@ -195,8 +195,8 @@ ExactMatchExpectedStudentFile: TypeAlias = str
 
 class FnmatchExpectedStudentFile(BaseModel):
     pattern: str
-    min_num_matches: int
-    max_num_matches: int
+    min_num_matches: int = 1
+    max_num_matches: int = 1
 
     def __str__(self) -> str:
         return self.pattern

@@ -1,0 +1,35 @@
+project:
+  name: Test Project 66b209da8c544173ab0a16c0d4e7ce68
+  timezone: America/Chicago
+  course:
+    name: Test Course
+    semester: Summer
+    year: 2014
+  settings:
+  student_files:
+  - module1.py
+  - module2.py
+  - module3.py
+  - pattern: test*.py
+    max_num_matches: 10
+  instructor_files:
+  - local_path: instructor_files/ag_tests1.py
+  - local_path: instructor_files/ag_tests2.py
+  - local_path: instructor_files/ag_tests3.py
+  - local_path: instructor_files/static_analysis.py
+  test_suites:
+  - name: Static Analysis
+    instructor_files_needed:
+    - static_analysis.py
+    student_files_needed:
+    - module1.py
+    - module2.py
+    - module3.py
+    - test*.py
+  - name: AG Tests
+    instructor_files_needed:
+    - ag_tests1.py
+    - ag_tests2.py
+    student_files_needed:
+    - module1.py
+    - module2.py

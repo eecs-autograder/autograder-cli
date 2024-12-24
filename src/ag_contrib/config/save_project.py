@@ -120,12 +120,13 @@ class _ProjectSaver:
             patterns_in_yml.add(pattern)
             print("* Checking", pattern, "...")
             if pattern not in self.student_files:
-                do_post(
+                new_pattern = do_post(
                     self.client,
                     f"/api/projects/{self.project_pk}/expected_student_files/",
                     self._get_expected_student_file_request_body(student_file_config),
                     ag_schema.ExpectedStudentFile,
                 )
+                self.student_files[new_pattern['pattern']] = new_pattern
                 print("  Created", pattern)
             else:
                 do_patch(
@@ -195,9 +196,8 @@ class _ProjectSaver:
                             files={"file_obj": f},
                         )
                     check_response_status(response)
+                    self.instructor_files[local_file.name] = response.json()
                     print("  Created", local_file.name, "from", local_file)
-
-                self.instructor_files[local_file.name] = response.json()
 
         files_not_in_yml = set(self.instructor_files) - files_in_yml
         for file_ in files_not_in_yml:
