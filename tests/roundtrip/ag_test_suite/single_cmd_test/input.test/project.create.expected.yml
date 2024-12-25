@@ -1,0 +1,16 @@
+project:
+  name: Test Project dfa82fb45e134b01babcb4e2b4af8620
+  timezone: America/Chicago
+  course:
+    name: Test Course
+    semester: Summer
+    year: 2014
+  settings: {}
+  test_suites:
+  - name: Tests
+    test_cases:
+    - name: Test 1
+      cmd: echo hello
+      input:
+        source: text
+        text: some input weeee

@@ -1,0 +1,17 @@
+project:
+  name: Test Project 9b4ac31ee1ca415988fc04e1964188d0
+  timezone: America/Chicago
+  course:
+    name: Test Course
+    semester: Summer
+    year: 2014
+  settings:
+  test_suites:
+  - name: Suite 1
+    test_cases:
+    - name: Test 1
+      cmd: echo "hello world"
+      internal_admin_notes: Some admin notes about the test case
+      staff_description: A description for the staff
+      student_description: Info about the test for students
+      student_on_fail_description: A hint about the test case

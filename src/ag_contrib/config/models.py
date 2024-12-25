@@ -196,7 +196,7 @@ ExactMatchExpectedStudentFile: TypeAlias = str
 class FnmatchExpectedStudentFile(BaseModel):
     pattern: str
     min_num_matches: int = 1
-    max_num_matches: int = 1
+    max_num_matches: int
 
     def __str__(self) -> str:
         return self.pattern
@@ -547,7 +547,7 @@ class MultiCommandConfig(BaseModel):
 
 class SingleCmdTestCaseConfig(BaseModel):
     name: str
-    type: Literal["default", "single_cmd"] = "default"
+    type: Literal["single_cmd"] = "single_cmd"
 
     internal_admin_notes: str = ""
     staff_description: str = ""

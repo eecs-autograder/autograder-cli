@@ -199,7 +199,7 @@ def _load_instructor_files(
         )
         instructor_files.append(InstructorFileConfig(local_path=Path(item["name"])))
 
-    return instructor_files
+    return sorted(instructor_files, key=lambda file: file.local_path.name)
 
 
 def _download_file(client: HTTPClient, url: str, save_to: Path):

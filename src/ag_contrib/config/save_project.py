@@ -126,7 +126,7 @@ class _ProjectSaver:
                     self._get_expected_student_file_request_body(student_file_config),
                     ag_schema.ExpectedStudentFile,
                 )
-                self.student_files[new_pattern['pattern']] = new_pattern
+                self.student_files[new_pattern["pattern"]] = new_pattern
                 print("  Created", pattern)
             else:
                 do_patch(
@@ -261,13 +261,14 @@ class _ProjectSaver:
             test_cases = {
                 test["name"]: test for test in test_suites[suite_data.name]["ag_test_cases"]
             }
-            for tests in suite_data.test_cases:
-                for test in tests.do_repeat():
-                    self._save_test_case(test, test_suites[suite_data.name]["pk"], test_cases)
+            print('removeme suite data test cases', suite_data.test_cases)
+            for test_config in suite_data.test_cases:
+                for unrolled_test in test_config.do_repeat():
+                    self._save_test_case(
+                        unrolled_test, test_suites[suite_data.name]["pk"], test_cases
+                    )
 
-        suite_order = [
-            test_suites[suite.name]["pk"] for suite in self.config.project.test_suites
-        ]
+        suite_order = [test_suites[suite.name]["pk"] for suite in self.config.project.test_suites]
         suite_order_response = self.client.put(
             f"/api/projects/{self.project_pk}/ag_test_suites/order/",
             json=suite_order,

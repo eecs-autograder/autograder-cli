@@ -1,0 +1,18 @@
+project:
+  name: Test Project dde857922df242ccbe63e927db06462b
+  timezone: America/Chicago
+  course:
+    name: Test Course
+    semester: Summer
+    year: 2014
+  settings:
+  instructor_files:
+  - local_path: input.txt
+  test_suites:
+  - name: Tests
+    test_cases:
+    - name: Test 1
+      cmd: echo hello
+      input:
+        source: text
+        text: using text instead this time
