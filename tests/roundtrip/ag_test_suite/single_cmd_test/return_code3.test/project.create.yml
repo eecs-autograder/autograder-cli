@@ -1,0 +1,16 @@
+project:
+  name: Test Project 0b8b8244834f4a2db040860ff09781f9
+  timezone: America/Chicago
+  course:
+    name: Test Course
+    semester: Summer
+    year: 2014
+  settings:
+  test_suites:
+  - name: Suite
+    test_cases:
+    - name: Test
+      cmd: echo hello
+      return_code:
+        expected: zero
+        points: 3

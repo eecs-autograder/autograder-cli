@@ -6,6 +6,11 @@ fi
 test_dir=$(dirname "$(realpath $0)")/roundtrip/$1
 [[ $test_dir == *.test ]] || test_dir+=.test
 echo $test_dir
+
+if [ -d $test_dir ]; then
+    echo This test case directory already exists
+    exit 1
+fi
 mkdir -p $test_dir
 
 proj_uuid=$(python -c "import uuid; print(uuid.uuid4().hex)")
