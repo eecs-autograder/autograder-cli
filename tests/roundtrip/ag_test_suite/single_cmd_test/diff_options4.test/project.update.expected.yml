@@ -1,0 +1,16 @@
+project:
+  name: Test Project 6cf3363cb32a47bfa2ec8630e1792710
+  timezone: America/Chicago
+  course:
+    name: Test Course
+    semester: Summer
+    year: 2014
+  settings: {}
+  test_suites:
+  - name: Suite
+    test_cases:
+    - name: Test 1
+      cmd: echo hello
+      stdout:
+        compare_with: text
+        text: correct output
