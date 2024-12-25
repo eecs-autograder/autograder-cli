@@ -1,0 +1,15 @@
+project:
+  name: Test Project d9784ed5191b4865a839fdbad5e86294
+  timezone: America/Chicago
+  course:
+    name: Test Course
+    semester: Summer
+    year: 2014
+  settings: {}
+  test_suites:
+  - name: Suite
+    test_cases:
+    - name: Test 1
+      cmd: echo hello
+      resources:
+        block_process_spawn: true

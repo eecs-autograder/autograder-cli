@@ -1,0 +1,17 @@
+project:
+  name: Test Project 3937ecc62909496295087ca9dd338e59
+  timezone: America/Chicago
+  course:
+    name: Test Course
+    semester: Summer
+    year: 2014
+  settings: {}
+  test_suites:
+  - name: Suite
+    test_cases:
+    - name: Test 1
+      cmd: echo hello
+      resources:
+        time_limit: 15
+        virtual_memory_limit: 300000000
+        block_process_spawn: true
