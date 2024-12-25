@@ -1,0 +1,19 @@
+project:
+  name: Test Project 887d0f976b0f40d99431ce84e2e2b8dc
+  timezone: America/Chicago
+  course:
+    name: Test Course
+    semester: Summer
+    year: 2014
+  settings: {}
+  test_suites:
+  - name: Suite
+    test_cases:
+    - name: Test 1
+      cmd: echo hello
+      feedback:
+        normal_fdbk_config: pass/fail+timeout
+        first_failed_test_normal_fdbk_config: pass/fail+diff
+        ultimate_submission_fdbk_config: public
+        past_limit_submission_fdbk_config: pass/fail
+        staff_viewer_fdbk_config: pass/fail+output

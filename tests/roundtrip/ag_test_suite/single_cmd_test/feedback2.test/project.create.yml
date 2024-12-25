@@ -1,0 +1,69 @@
+project:
+  name: Test Project df4afc35ca3141f08283f6454e62dd8d
+  timezone: America/Chicago
+  course:
+    name: Test Course
+    semester: Summer
+    year: 2014
+  settings:
+  test_suites:
+  - name: Suite
+    test_cases:
+    - name: Test 1
+      cmd: echo hello
+      feedback:
+        normal_fdbk_config:
+          visible: true
+          show_student_description: false
+          return_code_fdbk_level: expected_and_actual
+          stdout_fdbk_level: correct_or_incorrect
+          stderr_fdbk_level: expected_and_actual
+          show_points: true
+          show_actual_return_code: false
+          show_actual_stdout: false
+          show_actual_stderr: false
+          show_whether_timed_out: true
+        first_failed_test_normal_fdbk_config:
+          visible: true
+          show_student_description: false
+          return_code_fdbk_level: correct_or_incorrect
+          stdout_fdbk_level: correct_or_incorrect
+          stderr_fdbk_level: no_feedback
+          show_points: true
+          show_actual_return_code: false
+          show_actual_stdout: false
+          show_actual_stderr: false
+          show_whether_timed_out: false
+        ultimate_submission_fdbk_config:
+          visible: false
+          show_student_description: false
+          return_code_fdbk_level: no_feedback
+          stdout_fdbk_level: correct_or_incorrect
+          stderr_fdbk_level: correct_or_incorrect
+          show_points: false
+          show_actual_return_code: false
+          show_actual_stdout: false
+          show_actual_stderr: true
+          show_whether_timed_out: false
+        past_limit_submission_fdbk_config:
+          visible: true
+          show_student_description: true
+          return_code_fdbk_level: correct_or_incorrect
+          stdout_fdbk_level: no_feedback
+          stderr_fdbk_level: no_feedback
+          show_points: true
+          show_actual_return_code: true
+          show_actual_stdout: false
+          show_actual_stderr: true
+          show_whether_timed_out: false
+        staff_viewer_fdbk_config:
+          visible: true
+          show_student_description: true
+          return_code_fdbk_level: expected_and_actual
+          stdout_fdbk_level: no_feedback
+          stderr_fdbk_level: expected_and_actual
+          show_points: false
+          show_actual_return_code: true
+          show_actual_stdout: true
+          show_actual_stderr: false
+          show_whether_timed_out: true
