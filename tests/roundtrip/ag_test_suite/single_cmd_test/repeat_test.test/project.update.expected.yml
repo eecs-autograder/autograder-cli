@@ -1,0 +1,53 @@
+project:
+  name: Test Project f996241bb24f4bb8b40c5de401a8a053
+  timezone: America/Chicago
+  course:
+    name: Test Course
+    semester: Summer
+    year: 2014
+  settings: {}
+  test_suites:
+  - name: Suite
+    test_cases:
+    - name: Test Spam
+      staff_description: very test updated
+      student_description: this very updated test is great
+      cmd: echo test spam 2.0 < input1.txt
+      return_code:
+        expected: zero
+        points: 3
+      feedback:
+        normal: pass/fail+timeout
+        final_graded_submission: public
+      resources:
+        time_limit: 17
+        virtual_memory_limit: 4000000
+        block_process_spawn: true
+    - name: Test Egg
+      staff_description: some test with ok update
+      student_description: this ok updated test is ok
+      cmd: echo test eggg 3.0 < input2.txt
+      return_code:
+        expected: zero
+        points: 5
+      feedback:
+        normal: pass/fail+timeout
+        final_graded_submission: public
+      resources:
+        time_limit: 17
+        virtual_memory_limit: 4000000
+        block_process_spawn: true
+    - name: Test Sausage
+      staff_description: what a test such update
+      student_description: this test is meh with update
+      cmd: echo test suasage < input3.txt
+      return_code:
+        expected: zero
+        points: 7
+      feedback:
+        normal: pass/fail+timeout
+        final_graded_submission: public
+      resources:
+        time_limit: 17
+        virtual_memory_limit: 4000000
+        block_process_spawn: true

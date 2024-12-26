@@ -1,0 +1,50 @@
+project:
+  name: Test Project f996241bb24f4bb8b40c5de401a8a053
+  timezone: America/Chicago
+  course:
+    name: Test Course
+    semester: Summer
+    year: 2014
+  settings: {}
+  test_suites:
+  - name: Suite
+    test_cases:
+    - name: Test Spam
+      staff_description: very test
+      student_description: this test is great
+      cmd: echo test spam < input1.txt
+      return_code:
+        expected: zero
+        points: 2
+      feedback:
+        normal: pass/fail+timeout
+        final_graded_submission: public
+      resources:
+        time_limit: 15
+        block_process_spawn: true
+    - name: Test Egg
+      staff_description: some test
+      student_description: this test is ok
+      cmd: echo test eggg < input2.txt
+      return_code:
+        expected: zero
+        points: 4
+      feedback:
+        normal: pass/fail+timeout
+        final_graded_submission: public
+      resources:
+        time_limit: 15
+        block_process_spawn: true
+    - name: Test Sausage
+      staff_description: what a test
+      student_description: this test is meh
+      cmd: echo test suasage < input3.txt
+      return_code:
+        expected: zero
+        points: 6
+      feedback:
+        normal: pass/fail+timeout
+        final_graded_submission: public
+      resources:
+        time_limit: 15
+        block_process_spawn: true

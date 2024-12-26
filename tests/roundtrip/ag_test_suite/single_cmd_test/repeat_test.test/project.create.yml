@@ -1,0 +1,46 @@
+project:
+  name: Test Project f996241bb24f4bb8b40c5de401a8a053
+  timezone: America/Chicago
+  course:
+    name: Test Course
+    semester: Summer
+    year: 2014
+  settings:
+  test_suites:
+  - name: Suite
+    test_cases:
+    - name: Test $test_name
+      cmd: echo $test_arg < $file
+      return_code:
+        expected: zero
+      feedback:
+        normal: pass/fail+timeout
+        final_graded_submission: public
+      resources:
+        time_limit: 15
+        block_process_spawn: true
+      repeat:
+        - $test_name: Spam
+          $test_arg: test spam
+          $file: input1.txt
+          _override:
+            return_code:
+              points: 2
+            staff_description: very test
+            student_description: this test is great
+        - $test_name: Egg
+          $test_arg: test eggg
+          $file: input2.txt
+          _override:
+            return_code:
+              points: 4
+            staff_description: some test
+            student_description: this test is ok
+        - $test_name: Sausage
+          $test_arg: test suasage
+          $file: input3.txt
+          _override:
+            return_code:
+              points: 6
+            staff_description: what a test
+            student_description: this test is meh
