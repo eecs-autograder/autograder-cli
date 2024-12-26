@@ -9,5 +9,6 @@ project:
   test_suites:
   - name: Suite 1
     setup_cmd: echo "WAAAAA"
-    past_limit_submission_fdbk_config: pass/fail
-    staff_viewer_fdbk_config: private
+    feedback:
+      past_limit_submission: pass/fail
+      staff_viewer: private

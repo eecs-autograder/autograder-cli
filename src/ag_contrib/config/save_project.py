@@ -277,7 +277,7 @@ class _ProjectSaver:
 
     def _make_save_test_suite_request_body(self, suite_config: TestSuiteConfig):
         return suite_config.model_dump(
-            exclude={"test_cases"},
+            exclude={"test_cases", "feedback"},
             # We do NOT want to exclude unset. Unsetting a field
             # should set it to the CLI default.
         ) | {
@@ -288,15 +288,15 @@ class _ProjectSaver:
             "instructor_files_needed": [
                 self.instructor_files[name] for name in suite_config.instructor_files_needed
             ],
-            "normal_fdbk_config": self._get_suite_setup_fdbk_conf(suite_config.normal_fdbk_config),
+            "normal_fdbk_config": self._get_suite_setup_fdbk_conf(suite_config.feedback.normal),
             "ultimate_submission_fdbk_config": self._get_suite_setup_fdbk_conf(
-                suite_config.ultimate_submission_fdbk_config
+                suite_config.feedback.final_graded_submission
             ),
             "past_limit_submission_fdbk_config": self._get_suite_setup_fdbk_conf(
-                suite_config.past_limit_submission_fdbk_config
+                suite_config.feedback.past_limit_submission
             ),
             "staff_viewer_fdbk_config": self._get_suite_setup_fdbk_conf(
-                suite_config.staff_viewer_fdbk_config
+                suite_config.feedback.staff_viewer
             ),
         }
 
@@ -378,14 +378,14 @@ class _ProjectSaver:
                     "internal_admin_notes": test.internal_admin_notes,
                     "staff_description": test.staff_description,
                     "student_description": test.student_description,
-                    "normal_fdbk_config": test.feedback.normal_fdbk_config,
+                    "normal_fdbk_config": test.feedback.normal,
                     "ultimate_submission_fdbk_config": (
-                        test.feedback.ultimate_submission_fdbk_config
+                        test.feedback.final_graded_submission
                     ),
                     "past_limit_submission_fdbk_config": (
-                        test.feedback.past_limit_submission_fdbk_config
+                        test.feedback.past_limit_submission
                     ),
-                    "staff_viewer_fdbk_config": test.feedback.staff_viewer_fdbk_config,
+                    "staff_viewer_fdbk_config": test.feedback.staff_viewer,
                 }
 
     def _make_save_single_cmd_test_request_body(
@@ -419,18 +419,18 @@ class _ProjectSaver:
             "ignore_whitespace": test.diff_options.ignore_whitespace,
             "ignore_whitespace_changes": test.diff_options.ignore_whitespace_changes,
             "ignore_blank_lines": test.diff_options.ignore_blank_lines,
-            "normal_fdbk_config": self._get_fdbk_conf(test.feedback.normal_fdbk_config),
+            "normal_fdbk_config": self._get_fdbk_conf(test.feedback.normal),
             "first_failed_test_normal_fdbk_config": self._get_fdbk_conf(
-                test.feedback.first_failed_test_normal_fdbk_config
+                test.feedback.first_failed_test
             ),
             "ultimate_submission_fdbk_config": self._get_fdbk_conf(
-                test.feedback.ultimate_submission_fdbk_config
+                test.feedback.final_graded_submission
             ),
             "past_limit_submission_fdbk_config": self._get_fdbk_conf(
-                test.feedback.past_limit_submission_fdbk_config
+                test.feedback.past_limit_submission
             ),
             "staff_viewer_fdbk_config": self._get_fdbk_conf(
-                test.feedback.staff_viewer_fdbk_config
+                test.feedback.staff_viewer
             ),
             "time_limit": test.resources.time_limit,
             "use_virtual_memory_limit": test.resources.virtual_memory_limit is not None,

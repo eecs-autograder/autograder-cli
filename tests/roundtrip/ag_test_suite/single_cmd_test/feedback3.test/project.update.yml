@@ -12,9 +12,9 @@ project:
     - name: Test 1
       cmd: echo hello
       feedback:
-        normal_fdbk_config: public
-        first_failed_test_normal_fdbk_config: pass/fail
-        ultimate_submission_fdbk_config:
+        normal: public
+        first_failed_test: pass/fail
+        final_graded_submission:
           visible: false
           show_student_description: false
           return_code_fdbk_level: no_feedback
@@ -25,7 +25,7 @@ project:
           show_actual_stdout: false
           show_actual_stderr: true
           show_whether_timed_out: false
-        past_limit_submission_fdbk_config:
+        past_limit_submission:
           visible: true
           show_student_description: true
           return_code_fdbk_level: no_feedback
@@ -36,4 +36,4 @@ project:
           show_actual_stdout: false
           show_actual_stderr: false
           show_whether_timed_out: false
-        staff_viewer_fdbk_config: pass/fail+output
+        staff_viewer: pass/fail+output

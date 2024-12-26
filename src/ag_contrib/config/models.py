@@ -235,6 +235,13 @@ class InstructorFileConfig(BaseModel):
         return self.local_path.name
 
 
+class TestSuiteFeedbackSettings(BaseModel):
+    normal: str | ag_schema.AGTestSuiteFeedbackConfig = "public"
+    final_graded_submission: str | ag_schema.AGTestSuiteFeedbackConfig = "public"
+    past_limit_submission: str | ag_schema.AGTestSuiteFeedbackConfig = "public"
+    staff_viewer: str | ag_schema.AGTestSuiteFeedbackConfig = "public"
+
+
 class TestSuiteConfig(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
@@ -251,10 +258,7 @@ class TestSuiteConfig(BaseModel):
     setup_suite_cmd_name: Annotated[str, Field(alias="setup_label")] = ""
     reject_submission_if_setup_fails: bool = False
 
-    normal_fdbk_config: str | ag_schema.AGTestSuiteFeedbackConfig = "public"
-    ultimate_submission_fdbk_config: str | ag_schema.AGTestSuiteFeedbackConfig = "public"
-    past_limit_submission_fdbk_config: str | ag_schema.AGTestSuiteFeedbackConfig = "public"
-    staff_viewer_fdbk_config: str | ag_schema.AGTestSuiteFeedbackConfig = "public"
+    feedback: TestSuiteFeedbackSettings = TestSuiteFeedbackSettings()
 
     test_cases: list[SingleCmdTestCaseConfig | MultiCmdTestCaseConfig] = []
 
@@ -271,14 +275,16 @@ class TestSuiteConfig(BaseModel):
             setup_suite_cmd=data["setup_suite_cmd"],
             setup_suite_cmd_name=data["setup_suite_cmd_name"],
             reject_submission_if_setup_fails=data["reject_submission_if_setup_fails"],
-            normal_fdbk_config=_suite_fdbk_dict_to_preset(data["normal_fdbk_config"]),
-            ultimate_submission_fdbk_config=_suite_fdbk_dict_to_preset(
-                data["ultimate_submission_fdbk_config"]
+            feedback=TestSuiteFeedbackSettings(
+                normal=_suite_fdbk_dict_to_preset(data["normal_fdbk_config"]),
+                final_graded_submission=_suite_fdbk_dict_to_preset(
+                    data["ultimate_submission_fdbk_config"]
+                ),
+                past_limit_submission=_suite_fdbk_dict_to_preset(
+                    data["past_limit_submission_fdbk_config"]
+                ),
+                staff_viewer=_suite_fdbk_dict_to_preset(data["staff_viewer_fdbk_config"]),
             ),
-            past_limit_submission_fdbk_config=_suite_fdbk_dict_to_preset(
-                data["past_limit_submission_fdbk_config"]
-            ),
-            staff_viewer_fdbk_config=_suite_fdbk_dict_to_preset(data["staff_viewer_fdbk_config"]),
             test_cases=[_test_case_from_api(test_case) for test_case in data["ag_test_cases"]],
         )
 
@@ -345,19 +351,19 @@ def _test_case_from_api(data: ag_schema.AGTestCase):
                 ignore_blank_lines=cmd["ignore_blank_lines"],
             ),
             feedback=CommandFeedbackSettings(
-                normal_fdbk_config=_cmd_fdbk_dict_to_preset(cmd["normal_fdbk_config"]),
-                first_failed_test_normal_fdbk_config=(
+                normal=_cmd_fdbk_dict_to_preset(cmd["normal_fdbk_config"]),
+                first_failed_test=(
                     _cmd_fdbk_dict_to_preset(cmd["first_failed_test_normal_fdbk_config"])
                     if cmd["first_failed_test_normal_fdbk_config"] is not None
                     else None
                 ),
-                ultimate_submission_fdbk_config=_cmd_fdbk_dict_to_preset(
+                final_graded_submission=_cmd_fdbk_dict_to_preset(
                     cmd["ultimate_submission_fdbk_config"]
                 ),
-                past_limit_submission_fdbk_config=_cmd_fdbk_dict_to_preset(
+                past_limit_submission=_cmd_fdbk_dict_to_preset(
                     cmd["past_limit_submission_fdbk_config"]
                 ),
-                staff_viewer_fdbk_config=_cmd_fdbk_dict_to_preset(cmd["staff_viewer_fdbk_config"]),
+                staff_viewer=_cmd_fdbk_dict_to_preset(cmd["staff_viewer_fdbk_config"]),
             ),
             resources=ResourceLimits(
                 time_limit=cmd["time_limit"],
@@ -375,10 +381,10 @@ def _test_case_from_api(data: ag_schema.AGTestCase):
             staff_description=data["staff_description"],
             student_description=data["student_description"],
             feedback=MultiCmdTestCaseFdbkConfig(
-                normal_fdbk_config=data["normal_fdbk_config"],
-                past_limit_submission_fdbk_config=data["past_limit_submission_fdbk_config"],
-                staff_viewer_fdbk_config=data["staff_viewer_fdbk_config"],
-                ultimate_submission_fdbk_config=data["ultimate_submission_fdbk_config"],
+                normal=data["normal_fdbk_config"],
+                past_limit_submission=data["past_limit_submission_fdbk_config"],
+                staff_viewer=data["staff_viewer_fdbk_config"],
+                final_graded_submission=data["ultimate_submission_fdbk_config"],
             ),
             commands=[
                 MultiCommandConfig(
@@ -419,19 +425,19 @@ def _test_case_from_api(data: ag_schema.AGTestCase):
                         ignore_blank_lines=cmd["ignore_blank_lines"],
                     ),
                     feedback=CommandFeedbackSettings(
-                        normal_fdbk_config=_cmd_fdbk_dict_to_preset(cmd["normal_fdbk_config"]),
-                        first_failed_test_normal_fdbk_config=_cmd_fdbk_dict_to_preset(
-                            cmd["first_failed_test_normal_fdbk_config"]
+                        normal=_cmd_fdbk_dict_to_preset(cmd["normal_fdbk_config"]),
+                        first_failed_test=(
+                            _cmd_fdbk_dict_to_preset(cmd["first_failed_test_normal_fdbk_config"])
+                            if cmd["first_failed_test_normal_fdbk_config"] is not None
+                            else None
                         ),
-                        ultimate_submission_fdbk_config=_cmd_fdbk_dict_to_preset(
+                        final_graded_submission=_cmd_fdbk_dict_to_preset(
                             cmd["ultimate_submission_fdbk_config"]
                         ),
-                        past_limit_submission_fdbk_config=_cmd_fdbk_dict_to_preset(
+                        past_limit_submission=_cmd_fdbk_dict_to_preset(
                             cmd["past_limit_submission_fdbk_config"]
                         ),
-                        staff_viewer_fdbk_config=_cmd_fdbk_dict_to_preset(
-                            cmd["staff_viewer_fdbk_config"]
-                        ),
+                        staff_viewer=_cmd_fdbk_dict_to_preset(cmd["staff_viewer_fdbk_config"]),
                     ),
                     resources=ResourceLimits(
                         time_limit=cmd["time_limit"],
@@ -499,22 +505,22 @@ class MultiCmdTestCaseConfig(BaseModel):
 
 
 class MultiCmdTestCaseFdbkConfig(BaseModel):
-    normal_fdbk_config: ag_schema.AGTestCaseFeedbackConfig = {
+    normal: ag_schema.AGTestCaseFeedbackConfig = {
         "visible": True,
         "show_individual_commands": True,
         "show_student_description": True,
     }
-    ultimate_submission_fdbk_config: ag_schema.AGTestCaseFeedbackConfig = {
+    final_graded_submission: ag_schema.AGTestCaseFeedbackConfig = {
         "visible": True,
         "show_individual_commands": True,
         "show_student_description": True,
     }
-    past_limit_submission_fdbk_config: ag_schema.AGTestCaseFeedbackConfig = {
+    past_limit_submission: ag_schema.AGTestCaseFeedbackConfig = {
         "visible": True,
         "show_individual_commands": True,
         "show_student_description": True,
     }
-    staff_viewer_fdbk_config: ag_schema.AGTestCaseFeedbackConfig = {
+    staff_viewer: ag_schema.AGTestCaseFeedbackConfig = {
         "visible": True,
         "show_individual_commands": True,
         "show_student_description": True,
@@ -578,7 +584,7 @@ class SingleCmdTestCaseConfig(BaseModel):
 
         new_tests: list[SingleCmdTestCaseConfig] = []
         for substitution in self.repeat:
-            new_data = self.model_dump(exclude_unset=True) | {
+            new_data = self.model_dump() | {
                 "name": apply_substitutions(self.name, substitution),
                 "cmd": apply_substitutions(self.cmd, substitution),
             }
@@ -609,7 +615,7 @@ class SingleCmdTestCaseConfig(BaseModel):
                     if not isinstance(key, str) or key not in new_data:
                         raise AGConfigError(
                             f'Warning: unrecognized field "{key}" in '
-                            'repeat override for test "{self.name}"'
+                            f'repeat override for test "{self.name}"'
                         )
 
                     if isinstance(value, dict):
@@ -673,11 +679,11 @@ class DiffOptions(BaseModel):
 
 
 class CommandFeedbackSettings(BaseModel):
-    normal_fdbk_config: ag_schema.AGTestCommandFeedbackConfig | str = "pass/fail"
-    first_failed_test_normal_fdbk_config: ag_schema.AGTestCommandFeedbackConfig | str | None = None
-    ultimate_submission_fdbk_config: ag_schema.AGTestCommandFeedbackConfig | str = "pass/fail"
-    past_limit_submission_fdbk_config: ag_schema.AGTestCommandFeedbackConfig | str = "private"
-    staff_viewer_fdbk_config: ag_schema.AGTestCommandFeedbackConfig | str = "public"
+    normal: ag_schema.AGTestCommandFeedbackConfig | str = "pass/fail"
+    first_failed_test: ag_schema.AGTestCommandFeedbackConfig | str | None = None
+    final_graded_submission: ag_schema.AGTestCommandFeedbackConfig | str = "pass/fail"
+    past_limit_submission: ag_schema.AGTestCommandFeedbackConfig | str = "private"
+    staff_viewer: ag_schema.AGTestCommandFeedbackConfig | str = "public"
 
 
 class ResourceLimits(BaseModel):

@@ -12,8 +12,8 @@ project:
     - name: Test 1
       cmd: echo hello
       feedback:
-        normal_fdbk_config: public
-        first_failed_test_normal_fdbk_config: pass/fail+timeout
-        ultimate_submission_fdbk_config: pass/fail+exit_status
-        past_limit_submission_fdbk_config: pass/fail+output
-        staff_viewer_fdbk_config: pass/fail+diff
+        normal: public
+        first_failed_test: pass/fail+timeout
+        final_graded_submission: pass/fail+exit_status
+        past_limit_submission: pass/fail+output
+        staff_viewer: pass/fail+diff

@@ -9,5 +9,6 @@ project:
   test_suites:
   - name: Suite 1
     setup_cmd: echo "WAAAAA"
-    normal_fdbk_config: private
-    ultimate_submission_fdbk_config: pass/fail
+    feedback:
+      normal: private
+      final_graded_submission: pass/fail

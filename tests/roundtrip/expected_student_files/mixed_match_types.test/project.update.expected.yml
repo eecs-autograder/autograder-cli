@@ -10,5 +10,4 @@ project:
   - file1.cpp
   - other.java
   - pattern: test_*.py
-    min_num_matches: 1
     max_num_matches: 2
