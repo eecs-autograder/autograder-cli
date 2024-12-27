@@ -63,5 +63,5 @@ def test_instructor_files():
         text=True,
     )
     print(result.stdout, flush=True)
-    assert '!! WARNING !! The instructor file file1.txt' in result.stdout
-    assert '!! WARNING !! The instructor file test42.py' in result.stdout
+    assert "!! WARNING !! The instructor file file1.txt" in result.stdout
+    assert "!! WARNING !! The instructor file test42.py" in result.stdout

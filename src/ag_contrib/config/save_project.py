@@ -178,11 +178,11 @@ class _ProjectSaver:
 
             glob_matches = sorted(self.project_config_dir.glob(str(file_config.local_path)))
             if not glob_matches:
-                raise AGConfigError(f'File not found: {file_config.name}')
+                raise AGConfigError(f"File not found: {file_config.name}")
 
             for local_file in glob_matches:
                 if local_file.is_dir():
-                    print('  Skipping directory', local_file)
+                    print("  Skipping directory", local_file)
                     continue
 
                 files_in_yml.add(local_file.name)
