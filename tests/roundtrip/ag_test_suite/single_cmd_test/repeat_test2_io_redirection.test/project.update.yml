@@ -1,0 +1,40 @@
+project:
+  name: Test Project c8115a2e466348838a2cd22e805edb61
+  timezone: America/Chicago
+  course:
+    name: Test Course
+    semester: Summer
+    year: 2014
+  settings:
+  test_suites:
+  - name: Suite
+    test_cases:
+    - name: Test $test_name
+      cmd: echo $test_arg wee
+      return_code:
+        expected: zero
+      input:
+        source: instructor_file
+        instructor_file: $input
+      stdout:
+        compare_with: instructor_file
+        instructor_file: $correct_stdout
+      stderr:
+        compare_with: instructor_file
+        instructor_file: $correct_stderr
+      repeat:
+        - $test_name: Spam
+          $test_arg: test spam
+          $input: input2.txt
+          $correct_stdout: output2.txt
+          $correct_stderr: stderr2.txt
+        - $test_name: Egg
+          $test_arg: test eggg
+          $input: input3.txt
+          $correct_stdout: output3.txt
+          $correct_stderr: stderr3.txt
+        - $test_name: Sausage
+          $test_arg: test suasage
+          $input: input1.txt
+          $correct_stdout: output1.txt
+          $correct_stderr: stderr1.txt
