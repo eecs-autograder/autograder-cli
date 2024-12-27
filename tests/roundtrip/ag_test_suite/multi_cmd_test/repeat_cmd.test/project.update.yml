@@ -1,0 +1,105 @@
+project:
+  name: Test Project a5f132adfdb5431ea30883bc73f35b0b
+  timezone: America/Chicago
+  course:
+    name: Test Course
+    semester: Summer
+    year: 2014
+  settings:
+  instructor_files:
+  - local_path: input1.txt
+  - local_path: input2.txt
+  - local_path: input3.txt
+  - local_path: output1.txt
+  - local_path: output2.txt
+  - local_path: output3.txt
+  - local_path: stderr1.txt
+  - local_path: stderr2.txt
+  - local_path: stderr3.txt
+  test_suites:
+  - name: Suite
+    test_cases:
+    - name: Test 1
+      type: multi_cmd
+      internal_admin_notes: Some updated very admin notes
+      staff_description: Such staff, very describe update
+      student_description: Student describe update wow
+      feedback:
+        normal:
+          visible: true
+          show_individual_commands: false
+          show_student_description: false
+        past_limit_submission:
+          visible: false
+          show_individual_commands: true
+          show_student_description: false
+        staff_viewer:
+          visible: true
+          show_individual_commands: true
+          show_student_description: false
+        final_graded_submission:
+          visible: false
+          show_individual_commands: false
+          show_student_description: true
+      commands:
+      - name: Cmd $cmd_name
+        cmd: echo updated $cmd_arg
+        internal_admin_notes: Hello admin 2.0
+        staff_description: You are staff 3.0
+        student_description: This is an command 4.0
+        student_on_fail_description: Command borken 5.0
+        input:
+          source: instructor_file
+          instructor_file: $input_file
+        return_code:
+          expected: nonzero
+          deduction: -4
+          points: 3
+        stdout:
+          compare_with: instructor_file
+          instructor_file: $stdout_correct
+          deduction: -1
+          points: 2
+        stderr:
+          compare_with: instructor_file
+          instructor_file: $stderr_correct
+          deduction: -7
+          points: 8
+        feedback:
+          normal: public
+          first_failed_test: pass/fail
+          final_graded_submission: pass/fail+diff
+          past_limit_submission: pass/fail+exit_status
+          staff_viewer: private
+        resources:
+          time_limit: 6
+        repeat:
+        - $cmd_name: Waa
+          $cmd_arg: spam
+          $input_file: input2.txt
+          $stdout_correct: output2.txt
+          $stderr_correct: stderr2.txt
+          _override:
+            return_code:
+              deduction: -5
+              points: 6
+            stderr:
+              deduction: -10
+              points: 9
+        - $cmd_name: Luigi
+          $cmd_arg: egg
+          $input_file: input3.txt
+          $stdout_correct: output3.txt
+          $stderr_correct: stderr3.txt
+        - $cmd_name: Time
+          $cmd_arg: sausage
+          $input_file: input1.txt
+          $stdout_correct: output1.txt
+          $stderr_correct: stderr1.txt
+          _override:
+            stdout:
+              deduction: -12
+              points: 11
+            resources:
+              time_limit: 9
+              block_process_spawn: true

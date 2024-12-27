@@ -1,0 +1,137 @@
+project:
+  name: Test Project a5f132adfdb5431ea30883bc73f35b0b
+  timezone: America/Chicago
+  course:
+    name: Test Course
+    semester: Summer
+    year: 2014
+  settings: {}
+  instructor_files:
+  - local_path: input1.txt
+  - local_path: input2.txt
+  - local_path: input3.txt
+  - local_path: output1.txt
+  - local_path: output2.txt
+  - local_path: output3.txt
+  - local_path: stderr1.txt
+  - local_path: stderr2.txt
+  - local_path: stderr3.txt
+  test_suites:
+  - name: Suite
+    test_cases:
+    - name: Test 1
+      internal_admin_notes: Some very admin notes
+      staff_description: Such staff, very describe
+      student_description: Student describe wow
+      feedback:
+        normal:
+          visible: false
+          show_individual_commands: false
+          show_student_description: false
+        final_graded_submission:
+          visible: true
+          show_individual_commands: false
+          show_student_description: true
+        past_limit_submission:
+          visible: true
+          show_individual_commands: true
+          show_student_description: false
+        staff_viewer:
+          visible: false
+          show_individual_commands: true
+          show_student_description: false
+      commands:
+      - name: Cmd Waa
+        cmd: echo spam
+        internal_admin_notes: Hello admin
+        staff_description: You are staff
+        student_description: This is an command
+        student_on_fail_description: Command borken
+        input:
+          source: instructor_file
+          instructor_file: input1.txt
+        return_code:
+          expected: nonzero
+          deduction: -7
+          points: 8
+        stdout:
+          compare_with: instructor_file
+          instructor_file: output1.txt
+          deduction: -3
+          points: 4
+        stderr:
+          compare_with: instructor_file
+          instructor_file: stderr1.txt
+          deduction: -9
+          points: 10
+        feedback:
+          normal: public
+          first_failed_test: pass/fail
+          final_graded_submission: pass/fail+diff
+          past_limit_submission: pass/fail+exit_status
+          staff_viewer: private
+        resources:
+          time_limit: 6
+      - name: Cmd Luigi
+        cmd: echo egg
+        internal_admin_notes: Hello admin
+        staff_description: You are staff
+        student_description: This is an command
+        student_on_fail_description: Command borken
+        input:
+          source: instructor_file
+          instructor_file: input2.txt
+        return_code:
+          expected: nonzero
+          deduction: -1
+          points: 2
+        stdout:
+          compare_with: instructor_file
+          instructor_file: output2.txt
+          deduction: -3
+          points: 4
+        stderr:
+          compare_with: instructor_file
+          instructor_file: stderr2.txt
+          deduction: -5
+          points: 6
+        feedback:
+          normal: public
+          first_failed_test: pass/fail
+          final_graded_submission: pass/fail+diff
+          past_limit_submission: pass/fail+exit_status
+          staff_viewer: private
+        resources:
+          time_limit: 6
+      - name: Cmd Time
+        cmd: echo sausage
+        internal_admin_notes: Hello admin
+        staff_description: You are staff
+        student_description: This is an command
+        student_on_fail_description: Command borken
+        input:
+          source: instructor_file
+          instructor_file: input3.txt
+        return_code:
+          expected: nonzero
+          deduction: -1
+          points: 2
+        stdout:
+          compare_with: instructor_file
+          instructor_file: output3.txt
+          deduction: -11
+          points: 12
+        stderr:
+          compare_with: instructor_file
+          instructor_file: stderr3.txt
+          deduction: -5
+          points: 6
+        feedback:
+          normal: public
+          first_failed_test: pass/fail
+          final_graded_submission: pass/fail+diff
+          past_limit_submission: pass/fail+exit_status
+          staff_viewer: private
+        resources:
+          time_limit: 9
+          block_process_spawn: true

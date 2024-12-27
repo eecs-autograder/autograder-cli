@@ -1,0 +1,35 @@
+project:
+  name: Test Project d062eb1ea54346a58e3617f8845d0220
+  timezone: America/Chicago
+  course:
+    name: Test Course
+    semester: Summer
+    year: 2014
+  settings: {}
+  test_suites:
+  - name: Suite
+    test_cases:
+    - name: Test spam
+      commands:
+      - name: Compile
+        cmd: ./compile.sh spam
+      - name: Run
+        cmd: ./run.sh spam
+      - name: Check
+        cmd: ./check.sh spam
+    - name: Test egg
+      commands:
+      - name: Compile
+        cmd: ./compile.sh egg
+      - name: Run
+        cmd: ./run.sh egg
+      - name: Check
+        cmd: ./check.sh egg
+    - name: Test sausage
+      commands:
+      - name: Compile
+        cmd: ./compile.sh sausage
+      - name: Run
+        cmd: ./run.sh sausage
+      - name: Check
+        cmd: ./check.sh sausage

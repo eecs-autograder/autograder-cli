@@ -16,6 +16,7 @@ from ag_contrib.config.models import (
     ExpectedStudentFile,
     FnmatchExpectedStudentFile,
     MultiCmdTestCaseConfig,
+    MultiCommandConfig,
     SingleCmdTestCaseConfig,
     TestSuiteConfig,
 )
@@ -175,8 +176,13 @@ class _ProjectSaver:
         for file_config in self.config.project.instructor_files:
             print("* Checking", file_config.name, "...")
 
-            for local_file in sorted(self.project_config_dir.glob(str(file_config.local_path))):
+            glob_matches = sorted(self.project_config_dir.glob(str(file_config.local_path)))
+            if not glob_matches:
+                raise AGConfigError(f'File not found: {file_config.name}')
+
+            for local_file in glob_matches:
                 if local_file.is_dir():
+                    print('  Skipping directory', local_file)
                     continue
 
                 files_in_yml.add(local_file.name)
@@ -261,11 +267,12 @@ class _ProjectSaver:
             test_cases = {
                 test["name"]: test for test in test_suites[suite_data.name]["ag_test_cases"]
             }
-            print('removeme suite data test cases', suite_data.test_cases)
             for test_config in suite_data.test_cases:
                 for unrolled_test in test_config.do_repeat():
                     self._save_test_case(
-                        unrolled_test, test_suites[suite_data.name]["pk"], test_cases
+                        unrolled_test,
+                        test_suites[suite_data.name]["pk"],
+                        test_cases,
                     )
 
         suite_order = [test_suites[suite.name]["pk"] for suite in self.config.project.test_suites]
@@ -357,9 +364,28 @@ class _ProjectSaver:
                     )
                     print("      Updated")
             case MultiCmdTestCaseConfig():
-                # FIXME
-                for _ in test.commands:
-                    pass
+                for cmd in test.commands:
+                    # Note: Commands are already unrolled
+                    # in MultiCmdTestCaseConfig.do_repeat(),
+                    # so we don't need to call do_repeat() on each
+                    # command here.
+                    print("    * Checking command", cmd.name, "...")
+                    if cmd.name not in existing_cmds:
+                        do_post(
+                            self.client,
+                            f'/api/ag_test_cases/{test_data["pk"]}/ag_test_commands/',
+                            request_body=self._make_save_multi_cmd_test_request_body(cmd),
+                            response_type=ag_schema.AGTestCommand,
+                        )
+                        print("      Created")
+                    else:
+                        do_patch(
+                            self.client,
+                            f'/api/ag_test_commands/{existing_cmds[cmd.name]["pk"]}/',
+                            request_body=self._make_save_multi_cmd_test_request_body(cmd),
+                            response_type=ag_schema.AGTestCommand,
+                        )
+                        print("      Updated")
 
     def _make_save_test_case_request_body(
         self, test: SingleCmdTestCaseConfig | MultiCmdTestCaseConfig
@@ -379,12 +405,8 @@ class _ProjectSaver:
                     "staff_description": test.staff_description,
                     "student_description": test.student_description,
                     "normal_fdbk_config": test.feedback.normal,
-                    "ultimate_submission_fdbk_config": (
-                        test.feedback.final_graded_submission
-                    ),
-                    "past_limit_submission_fdbk_config": (
-                        test.feedback.past_limit_submission
-                    ),
+                    "ultimate_submission_fdbk_config": test.feedback.final_graded_submission,
+                    "past_limit_submission_fdbk_config": test.feedback.past_limit_submission,
                     "staff_viewer_fdbk_config": test.feedback.staff_viewer,
                 }
 
@@ -429,9 +451,7 @@ class _ProjectSaver:
             "past_limit_submission_fdbk_config": self._get_fdbk_conf(
                 test.feedback.past_limit_submission
             ),
-            "staff_viewer_fdbk_config": self._get_fdbk_conf(
-                test.feedback.staff_viewer
-            ),
+            "staff_viewer_fdbk_config": self._get_fdbk_conf(test.feedback.staff_viewer),
             "time_limit": test.resources.time_limit,
             "use_virtual_memory_limit": test.resources.virtual_memory_limit is not None,
             "block_process_spawn": test.resources.block_process_spawn,
@@ -439,6 +459,61 @@ class _ProjectSaver:
 
         if test.resources.virtual_memory_limit is not None:
             body["virtual_memory_limit"] = test.resources.virtual_memory_limit
+
+        return body
+
+    def _make_save_multi_cmd_test_request_body(
+        self,
+        cmd: MultiCommandConfig,
+    ) -> ag_schema.AGTestCommand:
+        body: ag_schema.AGTestCommand = {
+            "name": cmd.name,
+            "cmd": cmd.cmd,
+            "internal_admin_notes": cmd.internal_admin_notes,
+            "staff_description": cmd.staff_description,
+            "student_description": cmd.student_description,
+            "student_on_fail_description": cmd.student_on_fail_description,
+            "stdin_source": cmd.input.source,
+            "stdin_text": cmd.input.text,
+            # The schema is incorrect, stdin_instructor_file should be nullable.
+            "stdin_instructor_file": self._get_instructor_file(cmd.input.instructor_file),  # type: ignore
+            "expected_return_code": cmd.return_code.expected,
+            "points_for_correct_return_code": int(cmd.return_code.points),
+            "deduction_for_wrong_return_code": int(cmd.return_code.deduction),
+            "expected_stdout_source": cmd.stdout.compare_with,
+            "expected_stdout_text": cmd.stdout.text,
+            # The schema is incorrect, expected_stdout_instructor_file should be nullable.
+            "expected_stdout_instructor_file": self._get_instructor_file(cmd.stdout.instructor_file),  # type: ignore
+            "points_for_correct_stdout": int(cmd.stdout.points),
+            "deduction_for_wrong_stdout": int(cmd.stdout.deduction),
+            "expected_stderr_source": cmd.stderr.compare_with,
+            "expected_stderr_text": cmd.stderr.text,
+            # The schema is incorrect, expected_stderr_instructor_file should be nullable.
+            "expected_stderr_instructor_file": self._get_instructor_file(cmd.stderr.instructor_file),  # type: ignore
+            "points_for_correct_stderr": int(cmd.stderr.points),
+            "deduction_for_wrong_stderr": int(cmd.stderr.deduction),
+            "ignore_case": cmd.diff_options.ignore_case,
+            "ignore_whitespace": cmd.diff_options.ignore_whitespace,
+            "ignore_whitespace_changes": cmd.diff_options.ignore_whitespace_changes,
+            "ignore_blank_lines": cmd.diff_options.ignore_blank_lines,
+            "normal_fdbk_config": self._get_fdbk_conf(cmd.feedback.normal),
+            "first_failed_test_normal_fdbk_config": self._get_fdbk_conf(
+                cmd.feedback.first_failed_test
+            ),
+            "ultimate_submission_fdbk_config": self._get_fdbk_conf(
+                cmd.feedback.final_graded_submission
+            ),
+            "past_limit_submission_fdbk_config": self._get_fdbk_conf(
+                cmd.feedback.past_limit_submission
+            ),
+            "staff_viewer_fdbk_config": self._get_fdbk_conf(cmd.feedback.staff_viewer),
+            "time_limit": cmd.resources.time_limit,
+            "use_virtual_memory_limit": cmd.resources.virtual_memory_limit is not None,
+            "block_process_spawn": cmd.resources.block_process_spawn,
+        }
+
+        if cmd.resources.virtual_memory_limit is not None:
+            body["virtual_memory_limit"] = cmd.resources.virtual_memory_limit
 
         return body
 

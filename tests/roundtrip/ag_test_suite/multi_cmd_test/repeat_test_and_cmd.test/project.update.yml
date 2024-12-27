@@ -1,0 +1,46 @@
+project:
+  name: Test Project ce74d0f7c3f54a8286d8bb70a911513b
+  timezone: America/Chicago
+  course:
+    name: Test Course
+    semester: Summer
+    year: 2014
+  settings:
+  instructor_files:
+  - local_path: input1.txt
+  - local_path: input2.txt
+  - local_path: output1.txt
+  - local_path: output2.txt
+  - local_path: stderr1.txt
+  - local_path: stderr2.txt
+  test_suites:
+  - name: Suite
+    test_cases:
+    - name: Test test_id
+      commands:
+      - name: $stage
+        cmd: $script test_id
+        stdin:
+          source: instructor_file
+          instructor_file: $input
+        stdout:
+          compare_with: instructor_file
+          instructor_file: $stdout
+        stderr:
+          compare_with: instructor_file
+          instructor_file: $stderr
+        repeat:
+        - $stage: Compile
+          $script: bash compile.sh
+        - $stage: Run
+          $script: bash run.sh
+
+      repeat:
+      - test_id: 42
+        $input: input2.txt
+        $stdout: output2.txt
+        $stderr: stderr2.txt
+      - test_id: 43
+        $input: input1.txt
+        $stdout: output1.txt
+        $stderr: stderr1.txt

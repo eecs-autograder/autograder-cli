@@ -389,6 +389,10 @@ def _test_case_from_api(data: ag_schema.AGTestCase):
             commands=[
                 MultiCommandConfig(
                     name=cmd["name"],
+                    internal_admin_notes=cmd["internal_admin_notes"],
+                    staff_description=cmd["staff_description"],
+                    student_description=cmd["student_description"],
+                    student_on_fail_description=cmd["student_on_fail_description"],
                     cmd=cmd["cmd"],
                     input=StdinSettings(
                         source=cmd["stdin_source"],
@@ -495,11 +499,30 @@ class MultiCmdTestCaseConfig(BaseModel):
                     command.name = apply_substitutions(command.name, substitution)
                     command.cmd = apply_substitutions(command.cmd, substitution)
 
-                new_test.commands = list(
-                    itertools.chain(*[cmd.do_repeat() for cmd in new_test.commands])
-                )
+                    if command.input.instructor_file is not None:
+                        command.input.instructor_file = apply_substitutions(
+                            command.input.instructor_file, substitution
+                        )
+                    if command.stdout.instructor_file is not None:
+                        command.stdout.instructor_file = apply_substitutions(
+                            command.stdout.instructor_file, substitution
+                        )
+                    if command.stderr.instructor_file is not None:
+                        command.stderr.instructor_file = apply_substitutions(
+                            command.stderr.instructor_file, substitution
+                        )
+
+                    # FIXME: Docs: don't support _override here (unclear
+                    # how to specify which command an override applies to)
 
                 new_tests.append(new_test)
+
+        # Command repeating should happen regardless of whether
+        # the test case itself is repeating.
+        for new_test in new_tests:
+            new_test.commands = list(
+                itertools.chain(*[cmd.do_repeat() for cmd in new_test.commands])
+            )
 
         return new_tests
 
@@ -531,6 +554,11 @@ class MultiCommandConfig(BaseModel):
     name: str
     cmd: str
 
+    internal_admin_notes: str = ""
+    staff_description: str = ""
+    student_description: str = ""
+    student_on_fail_description: str = ""
+
     input: StdinSettings = Field(default_factory=lambda: StdinSettings())
     return_code: MultiCmdTestReturnCodeCheckSettings = Field(
         default_factory=lambda: MultiCmdTestReturnCodeCheckSettings()
@@ -548,7 +576,53 @@ class MultiCommandConfig(BaseModel):
     repeat: list[dict[str, object]] = []
 
     def do_repeat(self) -> list[MultiCommandConfig]:
-        raise NotImplementedError
+        if not self.repeat:
+            return [self]
+
+        new_cmds: list[MultiCommandConfig] = []
+        for substitution in self.repeat:
+            new_data = self.model_dump() | {
+                "name": apply_substitutions(self.name, substitution),
+                "cmd": apply_substitutions(self.cmd, substitution),
+            }
+
+            if self.input.instructor_file is not None:
+                new_data["input"]["instructor_file"] = apply_substitutions(
+                    self.input.instructor_file, substitution
+                )
+            if self.stdout.instructor_file is not None:
+                new_data["stdout"]["instructor_file"] = apply_substitutions(
+                    self.stdout.instructor_file, substitution
+                )
+            if self.stderr.instructor_file is not None:
+                new_data["stderr"]["instructor_file"] = apply_substitutions(
+                    self.stderr.instructor_file, substitution
+                )
+
+            if _REPEAT_OVERRIDE_KEY in substitution:
+                overrides = substitution[_REPEAT_OVERRIDE_KEY]
+                if not isinstance(overrides, dict):
+                    raise AGConfigError(
+                        "Expected a dictionary for repeat overrides, "
+                        f'but was "{type(overrides)}"'
+                    )
+
+                # See https://github.com/microsoft/pyright/discussions/1792
+                for key, value in cast(Mapping[Any, Any], overrides).items():
+                    if not isinstance(key, str) or key not in new_data:
+                        raise AGConfigError(
+                            f'Warning: unrecognized field "{key}" in '
+                            f'repeat override for test "{self.name}"'
+                        )
+
+                    if isinstance(value, dict):
+                        new_data[key].update(value)
+                    else:
+                        new_data[key] = value
+
+            new_cmds.append(MultiCommandConfig.model_validate(new_data))
+
+        return new_cmds
 
 
 class SingleCmdTestCaseConfig(BaseModel):

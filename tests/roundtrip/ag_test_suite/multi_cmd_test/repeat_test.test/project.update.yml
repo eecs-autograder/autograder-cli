@@ -1,0 +1,26 @@
+project:
+  name: Test Project d062eb1ea54346a58e3617f8845d0220
+  timezone: America/Chicago
+  course:
+    name: Test Course
+    semester: Summer
+    year: 2014
+  settings:
+  test_suites:
+  - name: Suite
+    test_cases:
+    - name: Test $test_name
+      commands:
+      - name: Compile
+        cmd: ./compile.sh $test_id
+      - name: Run
+        cmd: ./run.sh $test_id
+      - name: Check
+        cmd: ./check.sh $test_id
+      repeat:
+      - $test_name: spam
+        $test_id: spam123
+      - $test_name: egg
+        $test_id: egg234
+      - $test_name: sausage
+        $test_id: sausage345
