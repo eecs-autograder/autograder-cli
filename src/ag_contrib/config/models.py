@@ -3,6 +3,7 @@ from __future__ import annotations
 import datetime
 import itertools
 from collections.abc import Mapping, Sequence
+from decimal import Decimal
 from pathlib import Path
 from typing import Annotated, Any, Final, Literal, TypeAlias, cast
 from zoneinfo import ZoneInfo
@@ -62,6 +63,7 @@ class ProjectConfig(BaseModel):
     student_files: Sequence[ExpectedStudentFile] = []
     instructor_files: list[InstructorFileConfig] = []
     test_suites: list[TestSuiteConfig] = []
+    mutation_suites: list[MutationSuiteConfig] = []
 
     @field_validator("settings", mode="before")
     @classmethod
@@ -350,7 +352,7 @@ def _test_case_from_api(data: ag_schema.AGTestCase):
                 ignore_whitespace_changes=cmd["ignore_whitespace_changes"],
                 ignore_blank_lines=cmd["ignore_blank_lines"],
             ),
-            feedback=CommandFeedbackSettings(
+            feedback=TestCommandFeedbackSettings(
                 normal=_cmd_fdbk_dict_to_preset(cmd["normal_fdbk_config"]),
                 first_failed_test=(
                     _cmd_fdbk_dict_to_preset(cmd["first_failed_test_normal_fdbk_config"])
@@ -428,7 +430,7 @@ def _test_case_from_api(data: ag_schema.AGTestCase):
                         ignore_whitespace_changes=cmd["ignore_whitespace_changes"],
                         ignore_blank_lines=cmd["ignore_blank_lines"],
                     ),
-                    feedback=CommandFeedbackSettings(
+                    feedback=TestCommandFeedbackSettings(
                         normal=_cmd_fdbk_dict_to_preset(cmd["normal_fdbk_config"]),
                         first_failed_test=(
                             _cmd_fdbk_dict_to_preset(cmd["first_failed_test_normal_fdbk_config"])
@@ -570,7 +572,9 @@ class MultiCommandConfig(BaseModel):
         default_factory=lambda: MultiCmdTestOutputSettings()
     )
     diff_options: DiffOptions = Field(default_factory=lambda: DiffOptions())
-    feedback: CommandFeedbackSettings = Field(default_factory=lambda: CommandFeedbackSettings())
+    feedback: TestCommandFeedbackSettings = Field(
+        default_factory=lambda: TestCommandFeedbackSettings()
+    )
     resources: ResourceLimits = Field(default_factory=lambda: ResourceLimits())
 
     repeat: list[dict[str, object]] = []
@@ -647,7 +651,9 @@ class SingleCmdTestCaseConfig(BaseModel):
         default_factory=lambda: SingleCmdTestOutputSettings()
     )
     diff_options: DiffOptions = Field(default_factory=lambda: DiffOptions())
-    feedback: CommandFeedbackSettings = Field(default_factory=lambda: CommandFeedbackSettings())
+    feedback: TestCommandFeedbackSettings = Field(
+        default_factory=lambda: TestCommandFeedbackSettings()
+    )
     resources: ResourceLimits = Field(default_factory=lambda: ResourceLimits())
 
     repeat: list[dict[str, object]] = []
@@ -752,7 +758,7 @@ class DiffOptions(BaseModel):
     ignore_blank_lines: bool = False
 
 
-class CommandFeedbackSettings(BaseModel):
+class TestCommandFeedbackSettings(BaseModel):
     normal: ag_schema.AGTestCommandFeedbackConfig | str = "pass/fail"
     first_failed_test: ag_schema.AGTestCommandFeedbackConfig | str | None = None
     final_graded_submission: ag_schema.AGTestCommandFeedbackConfig | str = "pass/fail"
@@ -764,6 +770,189 @@ class ResourceLimits(BaseModel):
     time_limit: int = 10
     virtual_memory_limit: int | None = None
     block_process_spawn: bool = False
+
+
+class MutationCommandFeedbackOptions(BaseModel):
+    show_return_code: bool = True
+    show_stdout: bool = True
+    show_stderr: bool = True
+
+
+class MutationSetupCmdFeedback(BaseModel):
+    normal: MutationCommandFeedbackOptions = MutationCommandFeedbackOptions()
+    final_graded_submission: MutationCommandFeedbackOptions = MutationCommandFeedbackOptions()
+    past_limit_submission: MutationCommandFeedbackOptions = MutationCommandFeedbackOptions()
+    staff_viewer: MutationCommandFeedbackOptions = MutationCommandFeedbackOptions()
+
+
+class MutationSetupCmd(BaseModel):
+    cmd: str
+    name: str = "Setup"
+    feedback: MutationSetupCmdFeedback = MutationSetupCmdFeedback()
+    resources: ResourceLimits = ResourceLimits()
+
+
+class TestDiscoveryFeedback(BaseModel):
+    normal: MutationCommandFeedbackOptions = MutationCommandFeedbackOptions()
+    final_graded_submission: MutationCommandFeedbackOptions = MutationCommandFeedbackOptions()
+    past_limit_submission: MutationCommandFeedbackOptions = MutationCommandFeedbackOptions()
+    staff_viewer: MutationCommandFeedbackOptions = MutationCommandFeedbackOptions()
+
+
+class TestDiscoveryCmd(BaseModel):
+    # We set different defaults than the ones in the API for
+    # cmd and max_num_student_tests so that these fields are
+    # written to the YAML file from load_project if they have
+    # the API defaults.
+    cmd: str = (
+        'echo "Replace this command with one that '
+        'finds and prints the names of student-written test cases."'
+    )
+    max_num_student_tests: int = 20
+    delimiter: Literal["newline", "any_whitespace"] = "any_whitespace"
+    feedback: TestDiscoveryFeedback = TestDiscoveryFeedback()
+    resources: ResourceLimits = ResourceLimits()
+
+
+class MutationCommandOutputFeedbackOptions(BaseModel):
+    show_stdout: bool
+    show_stderr: bool
+
+
+class FalsePositivesFeedback(BaseModel):
+    normal: MutationCommandOutputFeedbackOptions = MutationCommandOutputFeedbackOptions(
+        show_stdout=False,
+        show_stderr=False,
+    )
+    final_graded_submission: MutationCommandOutputFeedbackOptions = (
+        MutationCommandOutputFeedbackOptions(
+            show_stdout=False,
+            show_stderr=False,
+        )
+    )
+    past_limit_submission: MutationCommandOutputFeedbackOptions = (
+        MutationCommandOutputFeedbackOptions(
+            show_stdout=False,
+            show_stderr=False,
+        )
+    )
+    staff_viewer: MutationCommandOutputFeedbackOptions = MutationCommandOutputFeedbackOptions(
+        show_stdout=True,
+        show_stderr=True,
+    )
+
+
+class FalsePositivesCmd(BaseModel):
+    cmd: str = (
+        'echo "Replace this with a command that includes '
+        'the placeholder ${student_test_name}". '
+        "The command should run that test against a correct "
+        "implementation and exit nonzero (report a false positive) "
+        "if the test incorrectly reports a bug "
+        "in the correct implementation."
+    )
+    feedback: FalsePositivesFeedback = FalsePositivesFeedback()
+    resources: ResourceLimits = ResourceLimits()
+
+
+class FindBugsFeedback(BaseModel):
+    normal: MutationCommandOutputFeedbackOptions = MutationCommandOutputFeedbackOptions(
+        show_stdout=False,
+        show_stderr=False,
+    )
+    final_graded_submission: MutationCommandOutputFeedbackOptions = (
+        MutationCommandOutputFeedbackOptions(
+            show_stdout=False,
+            show_stderr=False,
+        )
+    )
+    past_limit_submission: MutationCommandOutputFeedbackOptions = (
+        MutationCommandOutputFeedbackOptions(
+            show_stdout=False,
+            show_stderr=False,
+        )
+    )
+    staff_viewer: MutationCommandOutputFeedbackOptions = MutationCommandOutputFeedbackOptions(
+        show_stdout=True,
+        show_stderr=True,
+    )
+
+
+class FindBugsCmd(BaseModel):
+    cmd: str = (
+        'echo "Replace this with a command that includes '
+        "the placeholders ${student_test_name} and ${buggy_impl_name}. "
+        "The command should run that test against that buggy implementation "
+        'and exit nonzero if the test detects the bug."'
+    )
+    resources: ResourceLimits = ResourceLimits()
+    feedback: FindBugsFeedback = FindBugsFeedback()
+
+
+class MutationSuiteFeedbackSettings(BaseModel):
+    visible: bool = True
+    show_invalid_test_names: bool
+    show_points: bool
+    bugs_detected: Literal["hide", "num_bugs_detected", "detected_bug_names", "all_bug_names"]
+
+
+class MutationSuiteFeedback(BaseModel):
+    normal: MutationSuiteFeedbackSettings = MutationSuiteFeedbackSettings(
+        show_invalid_test_names=True,
+        show_points=True,
+        bugs_detected="num_bugs_detected",
+    )
+    final_graded_submission: MutationSuiteFeedbackSettings = MutationSuiteFeedbackSettings(
+        show_invalid_test_names=True,
+        show_points=True,
+        bugs_detected="num_bugs_detected",
+    )
+    past_limit_submission: MutationSuiteFeedbackSettings = MutationSuiteFeedbackSettings(
+        show_invalid_test_names=False,
+        show_points=False,
+        bugs_detected="hide",
+    )
+    staff_viewer: MutationSuiteFeedbackSettings = MutationSuiteFeedbackSettings(
+        show_invalid_test_names=True,
+        show_points=True,
+        bugs_detected="detected_bug_names",
+    )
+
+
+class MutantHintOptions(BaseModel):
+    hint_limit_per_day: int | None = None
+    daily_limit_reset_time: Annotated[
+        datetime.time,
+        PlainValidator(validate_time),
+        PlainSerializer(serialize_time),
+    ] = datetime.time(hour=0)
+    hint_limit_per_submission: int | None = None
+
+    obfuscate_bug_names: Literal["none", "sequential", "hash"] = "none"
+    obfuscated_bug_names_prefix: str = "Bug "
+
+
+class MutationSuiteConfig(BaseModel):
+    name: str
+    sandbox_docker_image: str = "Default"
+    instructor_files_needed: list[str] = []
+    read_only_instructor_files: bool = True
+    student_files_needed: list[str] = []
+
+    allow_network_access: bool = False
+    deferred: bool = False
+
+    bug_names: list[str] | dict[str, list[str]] = []
+    points_per_bug: Decimal = Decimal(0)
+    max_points: int | None = None
+
+    setup: MutationSetupCmd | None = None
+    test_discovery: TestDiscoveryCmd = TestDiscoveryCmd()
+    false_positives_check: FalsePositivesCmd = FalsePositivesCmd()
+    find_bugs: FindBugsCmd = FindBugsCmd()
+
+    feedback: MutationSuiteFeedback = MutationSuiteFeedback()
+    hint_options: MutantHintOptions = MutantHintOptions()
 
 
 BUILTIN_TEST_SUITE_FDBK_PRESETS = {

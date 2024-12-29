@@ -2,8 +2,10 @@ import copy
 import itertools
 from collections.abc import Mapping
 from pathlib import Path
+from typing import Protocol, overload
 
 import yaml
+from requests import HTTPError
 
 import ag_contrib.config.generated.schema as ag_schema
 from ag_contrib.config.models import (
@@ -14,16 +16,25 @@ from ag_contrib.config.models import (
     DeadlineWithRelativeCutoff,
     ExactMatchExpectedStudentFile,
     ExpectedStudentFile,
+    FalsePositivesFeedback,
+    FindBugsFeedback,
     FnmatchExpectedStudentFile,
     MultiCmdTestCaseConfig,
     MultiCommandConfig,
+    MutationCommandFeedbackOptions,
+    MutationCommandOutputFeedbackOptions,
+    MutationSetupCmdFeedback,
+    MutationSuiteConfig,
+    MutationSuiteFeedback,
+    MutationSuiteFeedbackSettings,
     SingleCmdTestCaseConfig,
+    TestDiscoveryFeedback,
     TestSuiteConfig,
 )
 from ag_contrib.http_client import HTTPClient, check_response_status
 from ag_contrib.utils import get_api_token
 
-from .utils import do_get_list, do_patch, do_post, get_project_from_course
+from .utils import do_get, do_get_list, do_patch, do_post, get_project_from_course
 
 
 def save_project(config_file: str, *, base_url: str, token_file: str):
@@ -83,6 +94,7 @@ class _ProjectSaver:
         self._save_instructor_files()
         self._load_sandbox_images()
         self._save_test_suites()
+        self._save_mutation_suites()
         pass
 
     def _make_legacy_project_api_dict(self) -> ag_schema.UpdateProject:
@@ -244,34 +256,34 @@ class _ProjectSaver:
         )
         test_suites = {item["name"]: item for item in test_suites}
 
-        for suite_data in self.config.project.test_suites:
-            print("* Checking test suite", suite_data.name, "...")
-            if suite_data.name not in test_suites:
+        for suite_config in self.config.project.test_suites:
+            print("* Checking test suite", suite_config.name, "...")
+            if suite_config.name not in test_suites:
                 response = do_post(
                     self.client,
                     f"/api/projects/{self.project_pk}/ag_test_suites/",
-                    self._make_save_test_suite_request_body(suite_data),
+                    self._make_save_test_suite_request_body(suite_config),
                     ag_schema.AGTestSuite,
                 )
-                test_suites[suite_data.name] = response
-                print("  Created", suite_data.name)
+                test_suites[suite_config.name] = response
+                print("  Created", suite_config.name)
             else:
                 do_patch(
                     self.client,
-                    f'/api/ag_test_suites/{test_suites[suite_data.name]["pk"]}/',
-                    self._make_save_test_suite_request_body(suite_data),
+                    f'/api/ag_test_suites/{test_suites[suite_config.name]["pk"]}/',
+                    self._make_save_test_suite_request_body(suite_config),
                     ag_schema.AGTestSuite,
                 )
-                print("  Updated", suite_data.name)
+                print("  Updated", suite_config.name)
 
             test_cases = {
-                test["name"]: test for test in test_suites[suite_data.name]["ag_test_cases"]
+                test["name"]: test for test in test_suites[suite_config.name]["ag_test_cases"]
             }
-            for test_config in suite_data.test_cases:
+            for test_config in suite_config.test_cases:
                 for unrolled_test in test_config.do_repeat():
                     self._save_test_case(
                         unrolled_test,
-                        test_suites[suite_data.name]["pk"],
+                        test_suites[suite_config.name]["pk"],
                         test_cases,
                     )
 
@@ -540,278 +552,218 @@ class _ProjectSaver:
 
         return self.instructor_files[filename]
 
+    def _save_mutation_suites(self):
+        assert self.project_pk is not None
 
-#         test_cases = {test["name"]: test for test in test_suites[suite_data.name]["ag_test_cases"]}
-#         for test_data in suite_data.test_cases:
-#             if test_data.repeat:
-#                 repeat_test_case(
-#                     test_data.repeat,
-#                     client,
-#                     suite_data,
-#                     test_data,
-#                     test_suites=test_suites,
-#                     test_cases=test_cases,
-#                     instructor_files=instructor_files,
-#                 )
-#             else:
-#                 create_or_update_test(
-#                     client,
-#                     suite_data,
-#                     test_data,
-#                     test_suites=test_suites,
-#                     test_cases=test_cases,
-#                     instructor_files=instructor_files,
-#                 )
+        print("Checking mutation suites")
+        mutation_suites = do_get_list(
+            self.client,
+            f"/api/projects/{self.project_pk}/mutation_test_suites/",
+            ag_schema.MutationTestSuite,
+        )
+        mutation_suites = {item["name"]: item for item in mutation_suites}
 
+        for suite_config in self.config.project.mutation_suites:
+            print("* Checking mutation suite", suite_config.name, "...")
+            if suite_config.name not in mutation_suites:
+                response = do_post(
+                    self.client,
+                    f"/api/projects/{self.project_pk}/mutation_test_suites/",
+                    self._make_save_mutation_suite_request_body(suite_config),
+                    ag_schema.MutationTestSuite,
+                )
+            else:
+                response = do_patch(
+                    self.client,
+                    f'/api/mutation_test_suites/{mutation_suites[suite_config.name]["pk"]}/',
+                    self._make_save_mutation_suite_request_body(suite_config),
+                    ag_schema.MutationTestSuite,
+                )
 
-# def get_instr_file(name: str | None, instr_files: dict[str, dict]):
-#     if name is None:
-#         return None
+            self._save_mutant_hint_config(suite_config, response["pk"])
 
-#     return instr_files[name]
+    def _make_save_mutation_suite_request_body(self, suite_config: MutationSuiteConfig):
+        setup_cmd_data = {}
+        if suite_config.setup is not None:
+            setup_cmd_data = {
+                "cmd": suite_config.setup.cmd,
+                "name": suite_config.setup.name,
+                "time_limit": suite_config.setup.resources.time_limit,
+                "use_virtual_memory_limit": (
+                    suite_config.setup.resources.virtual_memory_limit is not None
+                ),
+                "virtual_memory_limit": suite_config.setup.resources.virtual_memory_limit,
+                "block_process_spawn": suite_config.setup.resources.block_process_spawn,
+            }
 
+        return {
+            "name": suite_config.name,
+            "sandbox_docker_image": self.sandbox_images[suite_config.sandbox_docker_image],
+            "instructor_files_needed": [
+                self.instructor_files[name] for name in suite_config.instructor_files_needed
+            ],
+            "read_only_instructor_files": suite_config.read_only_instructor_files,
+            "student_files_needed": [
+                self.student_files[pattern] for pattern in suite_config.student_files_needed
+            ],
+            "buggy_impl_names": list(suite_config.bug_names),
+            "use_setup_command": suite_config.setup is not None,
+            "setup_command": setup_cmd_data,
+            "get_student_test_names_command": {
+                "cmd": suite_config.test_discovery.cmd,
+                "time_limit": suite_config.test_discovery.resources.time_limit,
+                "time_limit": suite_config.test_discovery.resources.time_limit,
+                "use_virtual_memory_limit": (
+                    suite_config.test_discovery.resources.virtual_memory_limit is not None
+                ),
+                "virtual_memory_limit": suite_config.test_discovery.resources.virtual_memory_limit,
+                "block_process_spawn": suite_config.test_discovery.resources.block_process_spawn,
+            },
+            "test_name_discovery_whitespace_handling": suite_config.test_discovery.delimiter,
+            "max_num_student_tests": suite_config.test_discovery.max_num_student_tests,
+            "student_test_validity_check_command": {
+                "cmd": suite_config.false_positives_check.cmd,
+                "time_limit": suite_config.false_positives_check.resources.time_limit,
+                "time_limit": suite_config.false_positives_check.resources.time_limit,
+                "use_virtual_memory_limit": (
+                    suite_config.false_positives_check.resources.virtual_memory_limit is not None
+                ),
+                "virtual_memory_limit": (
+                    suite_config.false_positives_check.resources.virtual_memory_limit
+                ),
+                "block_process_spawn": (
+                    suite_config.false_positives_check.resources.block_process_spawn
+                ),
+            },
+            "grade_buggy_impl_command": {
+                "cmd": suite_config.find_bugs.cmd,
+                "time_limit": suite_config.find_bugs.resources.time_limit,
+                "time_limit": suite_config.find_bugs.resources.time_limit,
+                "use_virtual_memory_limit": (
+                    suite_config.find_bugs.resources.virtual_memory_limit is not None
+                ),
+                "virtual_memory_limit": suite_config.find_bugs.resources.virtual_memory_limit,
+                "block_process_spawn": suite_config.find_bugs.resources.block_process_spawn,
+            },
+            "points_per_exposed_bug": suite_config.points_per_bug,
+            "max_points": suite_config.max_points,
+            "deferred": suite_config.deferred,
+            "allow_network_access": suite_config.allow_network_access,
+            "normal_fdbk_config": self._make_mutation_feedback_dict(
+                suite_config,
+                # As far as I can tell, there isn't currently a good way
+                # to represent this type. We would need either conditional types
+                # or "typeof" expressions.
+                lambda fdbk: fdbk.normal,  # type: ignore
+            ),
+            "ultimate_submission_fdbk_config": self._make_mutation_feedback_dict(
+                suite_config,
+                lambda fdbk: fdbk.final_graded_submission,  # type: ignore
+            ),
+            "past_limit_submission_fdbk_config": self._make_mutation_feedback_dict(
+                suite_config,
+                lambda fdbk: fdbk.past_limit_submission,  # type: ignore
+            ),
+            "staff_viewer_fdbk_config": self._make_mutation_feedback_dict(
+                suite_config,
+                lambda fdbk: fdbk.staff_viewer,  # type: ignore
+            ),
+        }
 
-# def create_or_update_test(
-#     client: HTTPClient,
-#     suite_data: TestSuiteConfig,
-#     test_data: TestCaseConfig,
-#     *,
-#     test_suites: dict[str, dict],
-#     test_cases: dict[str, dict],
-#     instructor_files: dict[str, dict],
-# ) -> None:
-#     _create_or_update_test_shallow(
-#         client,
-#         suite_data,
-#         test_data,
-#         test_suites=test_suites,
-#         test_cases=test_cases,
-#     )
+    # Ideally, the type of this function would be:
+    # - Input: A type var bounded by the union of the 5 input types below.
+    # - Return: The type of the "normal" attribute on the input type.
+    class _GetFdbkFnType(Protocol):
+        @overload
+        def __call__(
+            self, fdbk: MutationSetupCmdFeedback | TestDiscoveryFeedback
+        ) -> MutationCommandFeedbackOptions: ...
 
-#     commands = {cmd["name"]: cmd for cmd in test_cases[test_data.name]["ag_test_commands"]}
-#     for cmd_data in test_data.commands:
-#         if cmd_data.repeat:
-#             repeat_command(
-#                 cmd_data.repeat,
-#                 client,
-#                 test_data,
-#                 cmd_data,
-#                 test_cases=test_cases,
-#                 commands=commands,
-#                 instructor_files=instructor_files,
-#             )
-#         else:
-#             create_or_update_command(
-#                 client,
-#                 test_data,
-#                 cmd_data,
-#                 test_cases=test_cases,
-#                 commands=commands,
-#                 instructor_files=instructor_files,
-#             )
+        @overload
+        def __call__(
+            self, fdbk: FalsePositivesFeedback | FindBugsFeedback
+        ) -> MutationCommandOutputFeedbackOptions: ...
 
+        @overload
+        def __call__(self, fdbk: MutationSuiteFeedback) -> MutationSuiteFeedbackSettings: ...
 
-# def _create_or_update_test_shallow(
-#     client: HTTPClient,
-#     suite_data: TestSuiteConfig,
-#     test_data: TestCaseConfig,
-#     *,
-#     test_suites: dict[str, dict],
-#     test_cases: dict[str, dict],
-# ) -> None:
-#     request_body = test_data.model_dump(exclude_unset=True, exclude={"commands", "repeat"})
+    def _make_mutation_feedback_dict(
+        self,
+        suite_config: MutationSuiteConfig,
+        get_fdbk_fn: _GetFdbkFnType,
+    ) -> dict[str, object]:
+        if suite_config.setup is None:
+            return {}
 
-#     print("  * Checking test case", test_data.name, "...")
-#     if test_data.name in test_cases:
-#         response = client.patch(
-#             f'/api/ag_test_cases/{test_cases[test_data.name]["pk"]}/', json=request_body
-#         )
-#         check_response_status(response)
-#         print("    Updated", test_data.name)
-#     else:
-#         response = client.post(
-#             f'/api/ag_test_suites/{test_suites[suite_data.name]["pk"]}/ag_test_cases/',
-#             json=request_body,
-#         )
-#         check_response_status(response)
-#         test_cases[test_data.name] = response.json()
-#         print("    Created", test_data.name)
+        return {
+            "visible": get_fdbk_fn(suite_config.feedback).visible,
+            "show_setup_return_code": get_fdbk_fn(suite_config.setup.feedback).show_return_code,
+            "show_setup_stdout": get_fdbk_fn(suite_config.setup.feedback).show_stdout,
+            "show_setup_stderr": get_fdbk_fn(suite_config.setup.feedback).show_stderr,
+            "show_get_test_names_return_code": get_fdbk_fn(
+                suite_config.test_discovery.feedback
+            ).show_return_code,
+            "show_get_test_names_stdout": get_fdbk_fn(
+                suite_config.test_discovery.feedback
+            ).show_stdout,
+            "show_get_test_names_stderr": get_fdbk_fn(
+                suite_config.test_discovery.feedback
+            ).show_stderr,
+            "show_validity_check_stdout": get_fdbk_fn(
+                suite_config.false_positives_check.feedback
+            ).show_stdout,
+            "show_validity_check_stderr": get_fdbk_fn(
+                suite_config.false_positives_check.feedback
+            ).show_stderr,
+            "show_grade_buggy_impls_stdout": get_fdbk_fn(
+                suite_config.find_bugs.feedback
+            ).show_stdout,
+            "show_grade_buggy_impls_stderr": get_fdbk_fn(
+                suite_config.find_bugs.feedback
+            ).show_stderr,
+            "show_invalid_test_names": get_fdbk_fn(suite_config.feedback).show_invalid_test_names,
+            "show_points": get_fdbk_fn(suite_config.feedback).show_points,
+            "bugs_exposed_fdbk_level": get_fdbk_fn(suite_config.feedback).bugs_detected,
+        }
 
+    def _save_mutant_hint_config(self, suite_config: MutationSuiteConfig, suite_pk: int):
+        print("  Checking mutant hint config...")
 
-# def create_or_update_command(
-#     client: HTTPClient,
-#     test_data: TestCaseConfig,
-#     cmd_data: CommandConfig,
-#     *,
-#     test_cases: dict[str, dict],
-#     commands: dict[str, dict],
-#     instructor_files: dict[str, dict],
-# ) -> None:
-#     exclude_fields = [
-#         "stdin_instructor_file",
-#         "expected_stdout_instructor_file",
-#         "expected_stderr_instructor_file",
-#         "normal_fdbk_config",
-#         "first_failed_test_normal_fdbk_config",
-#         "ultimate_submission_fdbk_config",
-#         "past_limit_submission_fdbk_config",
-#         "staff_viewer_fdbk_config",
-#         "repeat",
-#     ]
+        try:
+            hint_config = do_get(
+                self.client,
+                f"/api/mutation_test_suites/{suite_pk}/hint_config/",
+                ag_schema.MutationTestSuiteHintConfig,
+            )
+            print("  Hint config loaded")
+        except HTTPError as e:
+            if e.response.status_code != 404:
+                raise
 
-#     stitched_data = {
-#         "stdin_instructor_file": get_instr_file(cmd_data.stdin_instructor_file, instructor_files),
-#         "expected_stdout_instructor_file": get_instr_file(
-#             cmd_data.expected_stdout_instructor_file, instructor_files
-#         ),
-#         "expected_stderr_instructor_file": get_instr_file(
-#             cmd_data.expected_stderr_instructor_file, instructor_files
-#         ),
-#         "normal_fdbk_config": get_fdbk_conf(cmd_data.normal_fdbk_config),
-#         "first_failed_test_normal_fdbk_config": get_fdbk_conf(
-#             cmd_data.first_failed_test_normal_fdbk_config
-#         ),
-#         "ultimate_submission_fdbk_config": get_fdbk_conf(cmd_data.ultimate_submission_fdbk_config),
-#         "past_limit_submission_fdbk_config": get_fdbk_conf(
-#             cmd_data.past_limit_submission_fdbk_config
-#         ),
-#         "staff_viewer_fdbk_config": get_fdbk_conf(cmd_data.staff_viewer_fdbk_config),
-#     }
+            hint_config = do_post(
+                self.client,
+                f"/api/mutation_test_suites/{suite_pk}/hint_config/",
+                {},
+                ag_schema.MutationTestSuiteHintConfig,
+            )
+            print("  Hint config created")
 
-#     print("    * Checking command", cmd_data.name, "...")
-
-#     request_body = (
-#         cmd_data.model_dump(mode="json", exclude_unset=True, exclude=exclude_fields)
-#         | stitched_data
-#     )
-
-#     if cmd_data.name in commands:
-#         response = client.patch(
-#             f'/api/ag_test_commands/{commands[cmd_data.name]["pk"]}/',
-#             json=request_body,
-#         )
-#         check_response_status(response)
-#         print("      Updated", cmd_data.name)
-#     else:
-#         response = client.post(
-#             f'/api/ag_test_cases/{test_cases[test_data.name]["pk"]}/ag_test_commands/',
-#             json=request_body,
-#         )
-#         check_response_status(response)
-#         commands[cmd_data.name] = response.json()
-#         print("      Created", cmd_data.name)
-
-
-# def repeat_test_case(
-#     substitutions: list[dict[str, object]],
-#     client: HTTPClient,
-#     suite_data: TestSuiteConfig,
-#     test_data: TestCaseConfig,
-#     *,
-#     test_suites: dict[str, dict],
-#     test_cases: dict[str, dict],
-#     instructor_files: dict[str, dict],
-# ):
-#     print(f"  Repeating test case {test_data.name}")
-#     for sub in substitutions:
-#         new_test_data = test_data.model_copy(deep=True)
-#         new_test_data.name = apply_substitutions(test_data.name, sub)
-
-#         _create_or_update_test_shallow(
-#             client,
-#             suite_data,
-#             new_test_data,
-#             test_suites=test_suites,
-#             test_cases=test_cases,
-#         )
-
-#         commands = {cmd["name"]: cmd for cmd in test_cases[new_test_data.name]["ag_test_commands"]}
-#         for cmd_data in test_data.commands:
-#             new_cmd_data = cmd_data.model_copy(deep=True)
-#             new_cmd_data.name = apply_substitutions(new_cmd_data.name, sub)
-#             new_cmd_data.cmd = apply_substitutions(new_cmd_data.cmd, sub)
-#             if new_cmd_data.stdin_instructor_file is not None:
-#                 new_cmd_data.stdin_instructor_file = apply_substitutions(
-#                     new_cmd_data.stdin_instructor_file, sub
-#                 )
-
-#             if new_cmd_data.expected_stdout_instructor_file is not None:
-#                 new_cmd_data.expected_stdout_instructor_file = apply_substitutions(
-#                     new_cmd_data.expected_stdout_instructor_file, sub
-#                 )
-
-#             if new_cmd_data.expected_stderr_instructor_file is not None:
-#                 new_cmd_data.expected_stderr_instructor_file = apply_substitutions(
-#                     new_cmd_data.expected_stderr_instructor_file, sub
-#                 )
-
-#             if new_cmd_data.repeat:
-#                 repeat_command(
-#                     new_cmd_data.repeat,
-#                     client,
-#                     new_test_data,
-#                     new_cmd_data,
-#                     test_cases=test_cases,
-#                     commands=commands,
-#                     instructor_files=instructor_files,
-#                 )
-#             else:
-#                 create_or_update_command(
-#                     client,
-#                     new_test_data,
-#                     new_cmd_data,
-#                     test_cases=test_cases,
-#                     commands=commands,
-#                     instructor_files=instructor_files,
-#                 )
-
-
-# def repeat_command(
-#     substitutions: list[dict[str, object]],
-#     client: HTTPClient,
-#     test_data: TestCaseConfig,
-#     cmd_data: CommandConfig,
-#     *,
-#     test_cases: dict[str, dict],
-#     commands: dict[str, dict],
-#     instructor_files: dict[str, dict],
-# ) -> None:
-#     print(f"    Repeating command {cmd_data.name}")
-#     for sub in substitutions:
-#         new_name = apply_substitutions(cmd_data.name, sub)
-#         new_cmd = apply_substitutions(cmd_data.cmd, sub)
-
-#         new_cmd_data = cmd_data.model_copy(deep=True)
-#         new_cmd_data.name = new_name
-#         new_cmd_data.cmd = new_cmd
-
-#         if new_cmd_data.stdin_instructor_file is not None:
-#             new_cmd_data.stdin_instructor_file = apply_substitutions(
-#                 new_cmd_data.stdin_instructor_file, sub
-#             )
-
-#         if new_cmd_data.expected_stdout_instructor_file is not None:
-#             new_cmd_data.expected_stdout_instructor_file = apply_substitutions(
-#                 new_cmd_data.expected_stdout_instructor_file, sub
-#             )
-
-#         if new_cmd_data.expected_stderr_instructor_file is not None:
-#             new_cmd_data.expected_stderr_instructor_file = apply_substitutions(
-#                 new_cmd_data.expected_stderr_instructor_file, sub
-#             )
-
-#         create_or_update_command(
-#             client,
-#             test_data,
-#             new_cmd_data,
-#             test_cases=test_cases,
-#             commands=commands,
-#             instructor_files=instructor_files,
-#         )
-
-
-# def apply_substitutions(string: str, sub: dict[str, object]) -> str:
-#     for placeholder, replacement in sub.items():
-#         string = string.replace(placeholder, str(replacement))
-
-#     return string
+        print("  Updating hint config")
+        do_patch(
+            self.client,
+            f'mutation_test_suite_hint_configs/{hint_config["pk"]}/',
+            {
+                "hints_by_mutant_name": (
+                    suite_config.bug_names if isinstance(suite_config.bug_names, dict) else {}
+                ),
+                "num_hints_per_day": suite_config.hint_options.hint_limit_per_day,
+                "hint_limit_reset_time": suite_config.hint_options.daily_limit_reset_time,
+                "hint_limit_reset_timezone": self.config.project.timezone.key,
+                "num_hints_per_submission": suite_config.hint_options.hint_limit_per_submission,
+                "obfuscate_mutant_names": suite_config.hint_options.obfuscate_bug_names,
+                "obfuscated_mutant_name_prefix": (
+                    suite_config.hint_options.obfuscated_bug_names_prefix
+                ),
+            },
+            ag_schema.MutationTestSuiteHintConfig,
+        )
