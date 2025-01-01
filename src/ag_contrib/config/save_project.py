@@ -2,7 +2,7 @@ import copy
 import itertools
 from collections.abc import Mapping
 from pathlib import Path
-from typing import Protocol, overload
+from typing import Final, Protocol, overload
 
 import yaml
 from requests import HTTPError
@@ -11,6 +11,7 @@ import ag_contrib.config.generated.schema as ag_schema
 from ag_contrib.config.models import (
     AGConfig,
     AGConfigError,
+    BugsDetectedFeedback,
     DeadlineWithFixedCutoff,
     DeadlineWithNoCutoff,
     DeadlineWithRelativeCutoff,
@@ -31,6 +32,7 @@ from ag_contrib.config.models import (
     TestDiscoveryFeedback,
     TestSuiteConfig,
 )
+from .time_processing import serialize_time
 from ag_contrib.http_client import HTTPClient, check_response_status
 from ag_contrib.utils import get_api_token
 
@@ -583,16 +585,13 @@ class _ProjectSaver:
             self._save_mutant_hint_config(suite_config, response["pk"])
 
     def _make_save_mutation_suite_request_body(self, suite_config: MutationSuiteConfig):
-        setup_cmd_data = {}
+        setup_cmd_data = {"cmd": "true"}
         if suite_config.setup is not None:
             setup_cmd_data = {
                 "cmd": suite_config.setup.cmd,
-                "name": suite_config.setup.name,
+                "name": suite_config.setup.label,
                 "time_limit": suite_config.setup.resources.time_limit,
-                "use_virtual_memory_limit": (
-                    suite_config.setup.resources.virtual_memory_limit is not None
-                ),
-                "virtual_memory_limit": suite_config.setup.resources.virtual_memory_limit,
+                **self._make_vmem_limit_dict(suite_config.setup.resources.virtual_memory_limit),
                 "block_process_spawn": suite_config.setup.resources.block_process_spawn,
             }
 
@@ -613,10 +612,9 @@ class _ProjectSaver:
                 "cmd": suite_config.test_discovery.cmd,
                 "time_limit": suite_config.test_discovery.resources.time_limit,
                 "time_limit": suite_config.test_discovery.resources.time_limit,
-                "use_virtual_memory_limit": (
-                    suite_config.test_discovery.resources.virtual_memory_limit is not None
+                **self._make_vmem_limit_dict(
+                    suite_config.test_discovery.resources.virtual_memory_limit
                 ),
-                "virtual_memory_limit": suite_config.test_discovery.resources.virtual_memory_limit,
                 "block_process_spawn": suite_config.test_discovery.resources.block_process_spawn,
             },
             "test_name_discovery_whitespace_handling": suite_config.test_discovery.delimiter,
@@ -624,11 +622,7 @@ class _ProjectSaver:
             "student_test_validity_check_command": {
                 "cmd": suite_config.false_positives_check.cmd,
                 "time_limit": suite_config.false_positives_check.resources.time_limit,
-                "time_limit": suite_config.false_positives_check.resources.time_limit,
-                "use_virtual_memory_limit": (
-                    suite_config.false_positives_check.resources.virtual_memory_limit is not None
-                ),
-                "virtual_memory_limit": (
+                **self._make_vmem_limit_dict(
                     suite_config.false_positives_check.resources.virtual_memory_limit
                 ),
                 "block_process_spawn": (
@@ -638,14 +632,12 @@ class _ProjectSaver:
             "grade_buggy_impl_command": {
                 "cmd": suite_config.find_bugs.cmd,
                 "time_limit": suite_config.find_bugs.resources.time_limit,
-                "time_limit": suite_config.find_bugs.resources.time_limit,
-                "use_virtual_memory_limit": (
-                    suite_config.find_bugs.resources.virtual_memory_limit is not None
+                **self._make_vmem_limit_dict(
+                    suite_config.find_bugs.resources.virtual_memory_limit
                 ),
-                "virtual_memory_limit": suite_config.find_bugs.resources.virtual_memory_limit,
                 "block_process_spawn": suite_config.find_bugs.resources.block_process_spawn,
             },
-            "points_per_exposed_bug": suite_config.points_per_bug,
+            "points_per_exposed_bug": str(suite_config.points_per_bug),
             "max_points": suite_config.max_points,
             "deferred": suite_config.deferred,
             "allow_network_access": suite_config.allow_network_access,
@@ -670,6 +662,12 @@ class _ProjectSaver:
             ),
         }
 
+    def _make_vmem_limit_dict(self, vmem_limit: int | None):
+        return {
+            "use_virtual_memory_limit": vmem_limit is not None,
+            "virtual_memory_limit": vmem_limit if vmem_limit is not None else 500000000,
+        }
+
     # Ideally, the type of this function would be:
     # - Input: A type var bounded by the union of the 5 input types below.
     # - Return: The type of the "normal" attribute on the input type.
@@ -692,14 +690,18 @@ class _ProjectSaver:
         suite_config: MutationSuiteConfig,
         get_fdbk_fn: _GetFdbkFnType,
     ) -> dict[str, object]:
-        if suite_config.setup is None:
-            return {}
-
+        setup_fdbk_dict = {}
+        if suite_config.setup is not None:
+            setup_fdbk_dict = {
+                "show_setup_return_code": get_fdbk_fn(
+                    suite_config.setup.feedback
+                ).show_return_code,
+                "show_setup_stdout": get_fdbk_fn(suite_config.setup.feedback).show_stdout,
+                "show_setup_stderr": get_fdbk_fn(suite_config.setup.feedback).show_stderr,
+            }
         return {
             "visible": get_fdbk_fn(suite_config.feedback).visible,
-            "show_setup_return_code": get_fdbk_fn(suite_config.setup.feedback).show_return_code,
-            "show_setup_stdout": get_fdbk_fn(suite_config.setup.feedback).show_stdout,
-            "show_setup_stderr": get_fdbk_fn(suite_config.setup.feedback).show_stderr,
+            **setup_fdbk_dict,
             "show_get_test_names_return_code": get_fdbk_fn(
                 suite_config.test_discovery.feedback
             ).show_return_code,
@@ -723,8 +725,19 @@ class _ProjectSaver:
             ).show_stderr,
             "show_invalid_test_names": get_fdbk_fn(suite_config.feedback).show_invalid_test_names,
             "show_points": get_fdbk_fn(suite_config.feedback).show_points,
-            "bugs_exposed_fdbk_level": get_fdbk_fn(suite_config.feedback).bugs_detected,
+            "bugs_exposed_fdbk_level": self._bugs_exposed_fdbk_config_to_api[
+                get_fdbk_fn(suite_config.feedback).bugs_detected
+            ],
         }
+
+    _bugs_exposed_fdbk_config_to_api: Final[
+        dict[BugsDetectedFeedback, ag_schema.BugsExposedFeedbackLevel]
+    ] = {
+        "hide": "no_feedback",
+        "num_bugs_detected": "num_bugs_exposed",
+        "detected_bug_names": "exposed_bug_names",
+        "all_bug_names": "all_bug_names",
+    }
 
     def _save_mutant_hint_config(self, suite_config: MutationSuiteConfig, suite_pk: int):
         print("  Checking mutant hint config...")
@@ -740,30 +753,34 @@ class _ProjectSaver:
             if e.response.status_code != 404:
                 raise
 
-            hint_config = do_post(
+            if isinstance(suite_config.bug_names, dict):
+                hint_config = do_post(
+                    self.client,
+                    f"/api/mutation_test_suites/{suite_pk}/hint_config/",
+                    {},
+                    ag_schema.MutationTestSuiteHintConfig,
+                )
+                print("  Hint config created")
+
+        if isinstance(suite_config.bug_names, dict):
+            print("  Updating hint config")
+            do_patch(
                 self.client,
-                f"/api/mutation_test_suites/{suite_pk}/hint_config/",
-                {},
+                f'/api/mutation_test_suite_hint_configs/{hint_config["pk"]}/',
+                {
+                    "hints_by_mutant_name": (
+                        suite_config.bug_names if isinstance(suite_config.bug_names, dict) else {}
+                    ),
+                    "num_hints_per_day": suite_config.hint_options.hint_limit_per_day,
+                    "hint_limit_reset_time": serialize_time(
+                        suite_config.hint_options.daily_limit_reset_time
+                    ),
+                    "hint_limit_reset_timezone": self.config.project.timezone.key,
+                    "num_hints_per_submission": suite_config.hint_options.hint_limit_per_submission,
+                    "obfuscate_mutant_names": suite_config.hint_options.obfuscate_bug_names,
+                    "obfuscated_mutant_name_prefix": (
+                        suite_config.hint_options.obfuscated_bug_names_prefix
+                    ),
+                },
                 ag_schema.MutationTestSuiteHintConfig,
             )
-            print("  Hint config created")
-
-        print("  Updating hint config")
-        do_patch(
-            self.client,
-            f'mutation_test_suite_hint_configs/{hint_config["pk"]}/',
-            {
-                "hints_by_mutant_name": (
-                    suite_config.bug_names if isinstance(suite_config.bug_names, dict) else {}
-                ),
-                "num_hints_per_day": suite_config.hint_options.hint_limit_per_day,
-                "hint_limit_reset_time": suite_config.hint_options.daily_limit_reset_time,
-                "hint_limit_reset_timezone": self.config.project.timezone.key,
-                "num_hints_per_submission": suite_config.hint_options.hint_limit_per_submission,
-                "obfuscate_mutant_names": suite_config.hint_options.obfuscate_bug_names,
-                "obfuscated_mutant_name_prefix": (
-                    suite_config.hint_options.obfuscated_bug_names_prefix
-                ),
-            },
-            ag_schema.MutationTestSuiteHintConfig,
-        )

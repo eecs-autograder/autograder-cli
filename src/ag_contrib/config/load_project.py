@@ -1,8 +1,10 @@
+from decimal import Decimal
 import warnings
 from pathlib import Path
-from typing import Literal
+from typing import Final, Literal
 
 from pydantic import TypeAdapter
+from requests import HTTPError
 
 import ag_contrib.config.generated.schema as ag_schema
 from ag_contrib.config.time_processing import validate_time
@@ -11,19 +13,35 @@ from ag_contrib.utils import get_api_token
 
 from .models import (
     AGConfig,
+    BugsDetectedFeedback,
     CourseSelection,
     DeadlineWithFixedCutoff,
     DeadlineWithNoCutoff,
     DeadlineWithRelativeCutoff,
     ExpectedStudentFile,
+    FalsePositivesCmd,
+    FalsePositivesFeedback,
+    FindBugsCmd,
+    FindBugsFeedback,
     InstructorFileConfig,
+    MutantHintOptions,
+    MutationCommandFeedbackOptions,
+    MutationCommandOutputFeedbackOptions,
+    MutationSetupCmd,
+    MutationSetupCmdFeedback,
+    MutationSuiteConfig,
+    MutationSuiteFeedback,
+    MutationSuiteFeedbackSettings,
     ProjectConfig,
     ProjectSettings,
+    ResourceLimits,
+    TestDiscoveryCmd,
+    TestDiscoveryFeedback,
     TestSuiteConfig,
     validate_datetime,
     validate_timezone,
 )
-from .utils import do_get_list, get_project_from_course, write_yaml
+from .utils import do_get, do_get_list, get_project_from_course, write_yaml
 
 
 def load_project(
@@ -91,6 +109,9 @@ def load_project(
     print("Loading test suites...")
     test_suites = _load_test_suites(client, project_data["pk"])
 
+    print("Loading mutation suites...")
+    mutation_suites = _load_mutation_suites(client, project_data["pk"])
+
     write_yaml(
         AGConfig(
             project=ProjectConfig(
@@ -105,6 +126,7 @@ def load_project(
                 student_files=student_file_data,
                 instructor_files=instructor_file_data,
                 test_suites=test_suites,
+                mutation_suites=mutation_suites,
             )
         ),
         output_file,
@@ -223,3 +245,304 @@ def _load_test_suites(client: HTTPClient, project_pk: int) -> list[TestSuiteConf
     )
 
     return [TestSuiteConfig.from_api(item) for item in suite_data]
+
+
+def _load_mutation_suites(client: HTTPClient, project_pk: int) -> list[MutationSuiteConfig]:
+    suite_response = do_get_list(
+        client,
+        f"/api/projects/{project_pk}/mutation_test_suites/",
+        ag_schema.MutationTestSuite,
+    )
+
+    suites: list[MutationSuiteConfig] = []
+    for suite_dict in suite_response:
+        bug_names = list(suite_dict["buggy_impl_names"])
+        hint_options = MutantHintOptions()
+        try:
+            hint_dict = do_get(
+                client,
+                f'/api/mutation_test_suites/{suite_dict["pk"]}/hint_config/',
+                ag_schema.MutationTestSuiteHintConfig,
+            )
+            bug_names = {bug: hint_dict["hints_by_mutant_name"].get(bug, []) for bug in bug_names}
+        except HTTPError as e:
+            if e.response.status_code != 404:
+                raise
+
+        suite = MutationSuiteConfig(
+            name=suite_dict["name"],
+            sandbox_docker_image=suite_dict["sandbox_docker_image"]["display_name"],
+            instructor_files_needed=[
+                file["name"] for file in suite_dict["instructor_files_needed"]
+            ],
+            read_only_instructor_files=suite_dict["read_only_instructor_files"],
+            student_files_needed=[file["pattern"] for file in suite_dict["student_files_needed"]],
+            allow_network_access=suite_dict["allow_network_access"],
+            deferred=suite_dict["deferred"],
+            bug_names=bug_names if bug_names else [],
+            points_per_bug=Decimal(suite_dict["points_per_exposed_bug"]),
+            max_points=suite_dict["max_points"],
+            setup=(
+                MutationSetupCmd(
+                    cmd=suite_dict["setup_command"]["cmd"],
+                    label=suite_dict["setup_command"]["name"],
+                    feedback=MutationSetupCmdFeedback(
+                        normal=MutationCommandFeedbackOptions(
+                            show_return_code=suite_dict["normal_fdbk_config"][
+                                "show_setup_return_code"
+                            ],
+                            show_stdout=suite_dict["normal_fdbk_config"]["show_setup_stdout"],
+                            show_stderr=suite_dict["normal_fdbk_config"]["show_setup_stderr"],
+                        ),
+                        final_graded_submission=MutationCommandFeedbackOptions(
+                            show_return_code=suite_dict["ultimate_submission_fdbk_config"][
+                                "show_setup_return_code"
+                            ],
+                            show_stdout=suite_dict["ultimate_submission_fdbk_config"][
+                                "show_setup_stdout"
+                            ],
+                            show_stderr=suite_dict["ultimate_submission_fdbk_config"][
+                                "show_setup_stderr"
+                            ],
+                        ),
+                        past_limit_submission=MutationCommandFeedbackOptions(
+                            show_return_code=suite_dict["past_limit_submission_fdbk_config"][
+                                "show_setup_return_code"
+                            ],
+                            show_stdout=suite_dict["past_limit_submission_fdbk_config"][
+                                "show_setup_stdout"
+                            ],
+                            show_stderr=suite_dict["past_limit_submission_fdbk_config"][
+                                "show_setup_stderr"
+                            ],
+                        ),
+                        staff_viewer=MutationCommandFeedbackOptions(
+                            show_return_code=suite_dict["staff_viewer_fdbk_config"][
+                                "show_setup_return_code"
+                            ],
+                            show_stdout=suite_dict["staff_viewer_fdbk_config"][
+                                "show_setup_stdout"
+                            ],
+                            show_stderr=suite_dict["staff_viewer_fdbk_config"][
+                                "show_setup_stderr"
+                            ],
+                        ),
+                    ),
+                    resources=ResourceLimits(
+                        time_limit=suite_dict["setup_command"]["time_limit"],
+                        virtual_memory_limit=(
+                            suite_dict["setup_command"]["virtual_memory_limit"]
+                            if suite_dict["setup_command"]["use_virtual_memory_limit"]
+                            else None
+                        ),
+                        block_process_spawn=suite_dict["setup_command"]["block_process_spawn"],
+                    ),
+                )
+                if suite_dict["use_setup_command"]
+                else None
+            ),
+            test_discovery=TestDiscoveryCmd(
+                cmd=suite_dict["get_student_test_names_command"]["cmd"],
+                max_num_student_tests=suite_dict["max_num_student_tests"],
+                delimiter=suite_dict["test_name_discovery_whitespace_handling"],
+                feedback=TestDiscoveryFeedback(
+                    normal=MutationCommandFeedbackOptions(
+                        show_return_code=suite_dict["normal_fdbk_config"][
+                            "show_get_test_names_return_code"
+                        ],
+                        show_stdout=suite_dict["normal_fdbk_config"]["show_get_test_names_stdout"],
+                        show_stderr=suite_dict["normal_fdbk_config"]["show_get_test_names_stderr"],
+                    ),
+                    final_graded_submission=MutationCommandFeedbackOptions(
+                        show_return_code=suite_dict["ultimate_submission_fdbk_config"][
+                            "show_get_test_names_return_code"
+                        ],
+                        show_stdout=suite_dict["ultimate_submission_fdbk_config"][
+                            "show_get_test_names_stdout"
+                        ],
+                        show_stderr=suite_dict["ultimate_submission_fdbk_config"][
+                            "show_get_test_names_stderr"
+                        ],
+                    ),
+                    past_limit_submission=MutationCommandFeedbackOptions(
+                        show_return_code=suite_dict["past_limit_submission_fdbk_config"][
+                            "show_get_test_names_return_code"
+                        ],
+                        show_stdout=suite_dict["past_limit_submission_fdbk_config"][
+                            "show_get_test_names_stdout"
+                        ],
+                        show_stderr=suite_dict["past_limit_submission_fdbk_config"][
+                            "show_get_test_names_stderr"
+                        ],
+                    ),
+                    staff_viewer=MutationCommandFeedbackOptions(
+                        show_return_code=suite_dict["staff_viewer_fdbk_config"][
+                            "show_get_test_names_return_code"
+                        ],
+                        show_stdout=suite_dict["staff_viewer_fdbk_config"][
+                            "show_get_test_names_stdout"
+                        ],
+                        show_stderr=suite_dict["staff_viewer_fdbk_config"][
+                            "show_get_test_names_stderr"
+                        ],
+                    ),
+                ),
+                resources=ResourceLimits(
+                    time_limit=suite_dict["get_student_test_names_command"]["time_limit"],
+                    virtual_memory_limit=(
+                        suite_dict["get_student_test_names_command"]["virtual_memory_limit"]
+                        if suite_dict["get_student_test_names_command"]["use_virtual_memory_limit"]
+                        else None
+                    ),
+                    block_process_spawn=suite_dict["get_student_test_names_command"][
+                        "block_process_spawn"
+                    ],
+                ),
+            ),
+            false_positives_check=FalsePositivesCmd(
+                cmd=suite_dict["student_test_validity_check_command"]["cmd"],
+                feedback=FalsePositivesFeedback(
+                    normal=MutationCommandOutputFeedbackOptions(
+                        show_stdout=suite_dict["normal_fdbk_config"]["show_validity_check_stdout"],
+                        show_stderr=suite_dict["normal_fdbk_config"]["show_validity_check_stderr"],
+                    ),
+                    final_graded_submission=MutationCommandOutputFeedbackOptions(
+                        show_stdout=suite_dict["ultimate_submission_fdbk_config"][
+                            "show_validity_check_stdout"
+                        ],
+                        show_stderr=suite_dict["ultimate_submission_fdbk_config"][
+                            "show_validity_check_stderr"
+                        ],
+                    ),
+                    past_limit_submission=MutationCommandOutputFeedbackOptions(
+                        show_stdout=suite_dict["past_limit_submission_fdbk_config"][
+                            "show_validity_check_stdout"
+                        ],
+                        show_stderr=suite_dict["past_limit_submission_fdbk_config"][
+                            "show_validity_check_stderr"
+                        ],
+                    ),
+                    staff_viewer=MutationCommandOutputFeedbackOptions(
+                        show_stdout=suite_dict["staff_viewer_fdbk_config"][
+                            "show_validity_check_stdout"
+                        ],
+                        show_stderr=suite_dict["staff_viewer_fdbk_config"][
+                            "show_validity_check_stderr"
+                        ],
+                    ),
+                ),
+                resources=ResourceLimits(
+                    time_limit=suite_dict["student_test_validity_check_command"]["time_limit"],
+                    virtual_memory_limit=(
+                        suite_dict["student_test_validity_check_command"]["virtual_memory_limit"]
+                        if suite_dict["student_test_validity_check_command"][
+                            "use_virtual_memory_limit"
+                        ]
+                        else None
+                    ),
+                    block_process_spawn=suite_dict["student_test_validity_check_command"][
+                        "block_process_spawn"
+                    ],
+                ),
+            ),
+            find_bugs=FindBugsCmd(
+                cmd=suite_dict["grade_buggy_impl_command"]["cmd"],
+                feedback=FindBugsFeedback(
+                    normal=MutationCommandOutputFeedbackOptions(
+                        show_stdout=suite_dict["normal_fdbk_config"][
+                            "show_grade_buggy_impls_stdout"
+                        ],
+                        show_stderr=suite_dict["normal_fdbk_config"][
+                            "show_grade_buggy_impls_stderr"
+                        ],
+                    ),
+                    final_graded_submission=MutationCommandOutputFeedbackOptions(
+                        show_stdout=suite_dict["ultimate_submission_fdbk_config"][
+                            "show_grade_buggy_impls_stdout"
+                        ],
+                        show_stderr=suite_dict["ultimate_submission_fdbk_config"][
+                            "show_grade_buggy_impls_stderr"
+                        ],
+                    ),
+                    past_limit_submission=MutationCommandOutputFeedbackOptions(
+                        show_stdout=suite_dict["past_limit_submission_fdbk_config"][
+                            "show_grade_buggy_impls_stdout"
+                        ],
+                        show_stderr=suite_dict["past_limit_submission_fdbk_config"][
+                            "show_grade_buggy_impls_stderr"
+                        ],
+                    ),
+                    staff_viewer=MutationCommandOutputFeedbackOptions(
+                        show_stdout=suite_dict["staff_viewer_fdbk_config"][
+                            "show_grade_buggy_impls_stdout"
+                        ],
+                        show_stderr=suite_dict["staff_viewer_fdbk_config"][
+                            "show_grade_buggy_impls_stderr"
+                        ],
+                    ),
+                ),
+                resources=ResourceLimits(
+                    time_limit=suite_dict["grade_buggy_impl_command"]["time_limit"],
+                    virtual_memory_limit=(
+                        suite_dict["grade_buggy_impl_command"]["virtual_memory_limit"]
+                        if suite_dict["grade_buggy_impl_command"]["use_virtual_memory_limit"]
+                        else None
+                    ),
+                    block_process_spawn=suite_dict["grade_buggy_impl_command"][
+                        "block_process_spawn"
+                    ],
+                ),
+            ),
+            feedback=MutationSuiteFeedback(
+                normal=MutationSuiteFeedbackSettings(
+                    show_invalid_test_names=suite_dict["normal_fdbk_config"][
+                        "show_invalid_test_names"
+                    ],
+                    show_points=suite_dict["normal_fdbk_config"]["show_points"],
+                    bugs_detected=_bugs_exposed_fdbk_api_to_config[
+                        suite_dict["normal_fdbk_config"]["bugs_exposed_fdbk_level"]
+                    ],
+                ),
+                final_graded_submission=MutationSuiteFeedbackSettings(
+                    show_invalid_test_names=suite_dict["ultimate_submission_fdbk_config"][
+                        "show_invalid_test_names"
+                    ],
+                    show_points=suite_dict["ultimate_submission_fdbk_config"]["show_points"],
+                    bugs_detected=_bugs_exposed_fdbk_api_to_config[
+                        suite_dict["ultimate_submission_fdbk_config"]["bugs_exposed_fdbk_level"]
+                    ],
+                ),
+                past_limit_submission=MutationSuiteFeedbackSettings(
+                    show_invalid_test_names=suite_dict["past_limit_submission_fdbk_config"][
+                        "show_invalid_test_names"
+                    ],
+                    show_points=suite_dict["past_limit_submission_fdbk_config"]["show_points"],
+                    bugs_detected=_bugs_exposed_fdbk_api_to_config[
+                        suite_dict["past_limit_submission_fdbk_config"]["bugs_exposed_fdbk_level"]
+                    ],
+                ),
+                staff_viewer=MutationSuiteFeedbackSettings(
+                    show_invalid_test_names=suite_dict["staff_viewer_fdbk_config"][
+                        "show_invalid_test_names"
+                    ],
+                    show_points=suite_dict["staff_viewer_fdbk_config"]["show_points"],
+                    bugs_detected=_bugs_exposed_fdbk_api_to_config[
+                        suite_dict["staff_viewer_fdbk_config"]["bugs_exposed_fdbk_level"]
+                    ],
+                ),
+            ),
+            hint_options=hint_options,
+        )
+        suites.append(suite)
+
+    return suites
+
+
+_bugs_exposed_fdbk_api_to_config: Final[
+    dict[ag_schema.BugsExposedFeedbackLevel, BugsDetectedFeedback]
+] = {
+    "no_feedback": "hide",
+    "num_bugs_exposed": "num_bugs_detected",
+    "exposed_bug_names": "detected_bug_names",
+    "all_bug_names": "all_bug_names",
+}

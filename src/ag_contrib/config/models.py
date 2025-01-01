@@ -787,7 +787,7 @@ class MutationSetupCmdFeedback(BaseModel):
 
 class MutationSetupCmd(BaseModel):
     cmd: str
-    name: str = "Setup"
+    label: str = "Setup"
     feedback: MutationSetupCmdFeedback = MutationSetupCmdFeedback()
     resources: ResourceLimits = ResourceLimits()
 
@@ -889,11 +889,16 @@ class FindBugsCmd(BaseModel):
     feedback: FindBugsFeedback = FindBugsFeedback()
 
 
+BugsDetectedFeedback: TypeAlias = Literal[
+    "hide", "num_bugs_detected", "detected_bug_names", "all_bug_names"
+]
+
+
 class MutationSuiteFeedbackSettings(BaseModel):
     visible: bool = True
     show_invalid_test_names: bool
     show_points: bool
-    bugs_detected: Literal["hide", "num_bugs_detected", "detected_bug_names", "all_bug_names"]
+    bugs_detected: BugsDetectedFeedback
 
 
 class MutationSuiteFeedback(BaseModel):

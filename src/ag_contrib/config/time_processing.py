@@ -59,8 +59,12 @@ def validate_time(value: object) -> datetime.time:
     )
 
 
-def serialize_time(value: datetime.time, info: SerializationInfo):
-    if (context := info.context) is not None and context.get("write_yaml", False):
+def serialize_time(value: datetime.time, info: SerializationInfo | None = None):
+    if (
+        info is not None
+        and (context := info.context) is not None
+        and context.get("write_yaml", False)
+    ):
         return value.strftime("%I:%M%p")
 
     return value.isoformat()

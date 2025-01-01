@@ -1,0 +1,17 @@
+project:
+  name: Test Project 9cfa1bd4c93b4949a8e0c612cc437010
+  timezone: America/Chicago
+  course:
+    name: Test Course
+    semester: Summer
+    year: 2014
+  settings:
+  mutation_suites:
+  - name: Suite
+    bug_names:
+    - bug1
+    - bug2
+    - bug3
+    - some_bug
+    points_per_bug: 2.5
+    max_points: 6

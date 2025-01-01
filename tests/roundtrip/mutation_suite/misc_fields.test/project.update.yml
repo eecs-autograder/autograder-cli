@@ -1,0 +1,29 @@
+project:
+  name: Test Project 0d6f2cfa7bc44e32ba21cbc8e02d40d0
+  timezone: America/Chicago
+  course:
+    name: Test Course
+    semester: Summer
+    year: 2014
+  settings:
+  instructor_files:
+  - local_path: instructor_file1.txt
+  - local_path: instructor_file2.txt
+  - local_path: instructor_file3.txt
+  student_files:
+  - test1.py
+  - test2.py
+  - pattern: test*.py
+    max_num_matches: 5
+  mutation_suites:
+  - name: Suite
+    instructor_files_needed:
+    - instructor_file1.txt
+    - instructor_file3.txt
+    - instructor_file2.txt
+    read_only_instructor_files: true
+    student_files_needed:
+    - test2.py
+    - test1.py
+    allow_network_access: false
+    deferred: false
