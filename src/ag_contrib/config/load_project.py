@@ -1,5 +1,5 @@
-from decimal import Decimal
 import warnings
+from decimal import Decimal
 from pathlib import Path
 from typing import Final, Literal
 

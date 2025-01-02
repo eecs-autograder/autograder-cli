@@ -1,4 +1,4 @@
-# Autograder.io Contrib
+# Autograder.io Command-Line Interface
 Contains utilities for writing applications that use the autograder.io API.
 
 We recommend Amir Kamil's [autograder-tools](https://gitlab.eecs.umich.edu/akamil/autograder-tools/tree/master) for a larger collection of applications.
@@ -9,13 +9,8 @@ pip install autograder-contrib
 ```
 
 # Obtaining a Token
-Log in to autograder.io in Chrome and open up the developer tools
-from the Chrome menu (View->Developer->Developer Tools on a Mac).
-Click on a course link. In the developer console, click on a request
-(e.g. my_roles/ or projects/). Under Request Headers, there is an
-Authorization entry that looks like "Token ". Copy
-the hex string and save it to the file .agtoken in your home
-directory.
+Visit https://autograder.io/web/__apitoken__ and sign in.
+Save the file you are prompted to download as `.agtoken` in your home directory or the directory.
 
 # The Command Line Interface
 This library provides a simple command line interface for sending requests:
@@ -36,3 +31,6 @@ response = client.get('/api/users/current/')
 check_response_status(response)
 print(json.dumps(response.json(), indent=4))
 ```
+# Developer Setup
+https://github.com/homeport/dyff
+curl --silent --location https://git.io/JYfAY | bash
