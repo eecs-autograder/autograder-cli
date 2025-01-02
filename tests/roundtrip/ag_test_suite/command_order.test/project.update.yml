@@ -1,0 +1,21 @@
+project:
+  name: Test Project d605b7e089264fc3ba9251e6ecf3b07f
+  timezone: America/Chicago
+  course:
+    name: Test Course
+    semester: Summer
+    year: 2014
+  settings:
+  test_suites:
+  - name: Suite
+    test_cases:
+    - name: Test
+      commands:
+      - name: Compile
+        cmd: echo hello
+      - name: Run
+        cmd: echo hello
+      - name: Diff
+        cmd: echo hello
+      - name: Check
+        cmd: echo hello

@@ -261,16 +261,16 @@ class _ProjectSaver:
         for suite_config in self.config.project.test_suites:
             print("* Checking test suite", suite_config.name, "...")
             if suite_config.name not in test_suites:
-                response = do_post(
+                suite_data = do_post(
                     self.client,
                     f"/api/projects/{self.project_pk}/ag_test_suites/",
                     self._make_save_test_suite_request_body(suite_config),
                     ag_schema.AGTestSuite,
                 )
-                test_suites[suite_config.name] = response
+                test_suites[suite_config.name] = suite_data
                 print("  Created", suite_config.name)
             else:
-                do_patch(
+                suite_data = do_patch(
                     self.client,
                     f'/api/ag_test_suites/{test_suites[suite_config.name]["pk"]}/',
                     self._make_save_test_suite_request_body(suite_config),
@@ -283,11 +283,19 @@ class _ProjectSaver:
             }
             for test_config in suite_config.test_cases:
                 for unrolled_test in test_config.do_repeat():
-                    self._save_test_case(
+                    test_data = self._save_test_case(
                         unrolled_test,
                         test_suites[suite_config.name]["pk"],
                         test_cases,
                     )
+                    test_cases[test_config.name] = test_data
+
+            test_order = [test_cases[test.name]["pk"] for test in suite_config.test_cases]
+            test_order_response = self.client.put(
+                f"/api/ag_test_suites/{suite_data['pk']}/ag_test_cases/order/",
+                json=test_order,
+            )
+            check_response_status(test_order_response)
 
         suite_order = [test_suites[suite.name]["pk"] for suite in self.config.project.test_suites]
         suite_order_response = self.client.put(
@@ -385,12 +393,13 @@ class _ProjectSaver:
                     # command here.
                     print("    * Checking command", cmd.name, "...")
                     if cmd.name not in existing_cmds:
-                        do_post(
+                        cmd_data = do_post(
                             self.client,
                             f'/api/ag_test_cases/{test_data["pk"]}/ag_test_commands/',
                             request_body=self._make_save_multi_cmd_test_request_body(cmd),
                             response_type=ag_schema.AGTestCommand,
                         )
+                        existing_cmds[cmd_data["name"]] = cmd_data
                         print("      Created")
                     else:
                         do_patch(
@@ -400,6 +409,16 @@ class _ProjectSaver:
                             response_type=ag_schema.AGTestCommand,
                         )
                         print("      Updated")
+
+                print("    Updating command order")
+                command_order = [existing_cmds[cmd.name]["pk"] for cmd in test.commands]
+                command_order_response = self.client.put(
+                    f"/api/ag_test_cases/{test_data['pk']}/ag_test_commands/order/",
+                    json=command_order,
+                )
+                check_response_status(command_order_response)
+
+        return test_data
 
     def _make_save_test_case_request_body(
         self, test: SingleCmdTestCaseConfig | MultiCmdTestCaseConfig
@@ -585,8 +604,10 @@ class _ProjectSaver:
 
             self._save_mutant_hint_config(suite_config, response["pk"])
 
-        print('Setting mutation suite order')
-        suite_order = [mutation_suites[suite.name]["pk"] for suite in self.config.project.mutation_suites]
+        print("Setting mutation suite order")
+        suite_order = [
+            mutation_suites[suite.name]["pk"] for suite in self.config.project.mutation_suites
+        ]
         suite_order_response = self.client.put(
             f"/api/projects/{self.project_pk}/mutation_test_suites/order/",
             json=suite_order,
