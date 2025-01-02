@@ -574,6 +574,7 @@ class _ProjectSaver:
                     self._make_save_mutation_suite_request_body(suite_config),
                     ag_schema.MutationTestSuite,
                 )
+                mutation_suites[response["name"]] = response
             else:
                 response = do_patch(
                     self.client,
@@ -583,6 +584,14 @@ class _ProjectSaver:
                 )
 
             self._save_mutant_hint_config(suite_config, response["pk"])
+
+        print('Setting mutation suite order')
+        suite_order = [mutation_suites[suite.name]["pk"] for suite in self.config.project.mutation_suites]
+        suite_order_response = self.client.put(
+            f"/api/projects/{self.project_pk}/mutation_test_suites/order/",
+            json=suite_order,
+        )
+        check_response_status(suite_order_response)
 
     def _make_save_mutation_suite_request_body(self, suite_config: MutationSuiteConfig):
         setup_cmd_data = {"cmd": "true"}
@@ -776,7 +785,9 @@ class _ProjectSaver:
                         suite_config.hint_options.daily_limit_reset_time
                     ),
                     "hint_limit_reset_timezone": self.config.project.timezone.key,
-                    "num_hints_per_submission": suite_config.hint_options.hint_limit_per_submission,
+                    "num_hints_per_submission": (
+                        suite_config.hint_options.hint_limit_per_submission
+                    ),
                     "obfuscate_mutant_names": suite_config.hint_options.obfuscate_bug_names,
                     "obfuscated_mutant_name_prefix": (
                         suite_config.hint_options.obfuscated_bug_names_prefix
@@ -784,3 +795,4 @@ class _ProjectSaver:
                 },
                 ag_schema.MutationTestSuiteHintConfig,
             )
+            print("  Hint config updated")

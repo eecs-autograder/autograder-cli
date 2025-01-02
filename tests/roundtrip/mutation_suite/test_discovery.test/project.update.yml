@@ -1,0 +1,33 @@
+project:
+  name: Test Project e4ba40a6cc6e4862a5b4a58bbd0d10e0
+  timezone: America/Chicago
+  course:
+    name: Test Course
+    semester: Summer
+    year: 2014
+  settings:
+  mutation_suites:
+  - name: Suite
+    test_discovery:
+      cmd: ls test*.py test*.cpp
+      resources:
+        time_limit: 15
+        virtual_memory_limit: 20000000
+        block_process_spawn: false
+      feedback:
+        normal:
+          show_return_code: false
+          show_stdout: false
+          show_stderr: false
+        final_graded_submission:
+          show_return_code: false
+          show_stdout: true
+          show_stderr: true
+        past_limit_submission:
+          show_return_code: true
+          show_stdout: true
+          show_stderr: false
+        staff_viewer:
+          show_return_code: false
+          show_stdout: true
+          show_stderr: false

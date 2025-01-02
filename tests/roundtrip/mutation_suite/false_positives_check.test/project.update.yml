@@ -1,0 +1,28 @@
+project:
+  name: Test Project b1687af454564ddab53eed2da8813be7
+  timezone: America/Chicago
+  course:
+    name: Test Course
+    semester: Summer
+    year: 2014
+  settings:
+  mutation_suites:
+  - name: Suite
+    false_positives_check:
+      cmd: ./run_test.sh ${student_test_name} check
+      resources:
+        time_limit: 45
+        virtual_memory_limit: 400000
+      feedback:
+        normal:
+          show_stdout: true
+          show_stderr: true
+        final_graded_submission:
+          show_stdout: false
+          show_stderr: true
+        past_limit_submission:
+          show_stdout: true
+          show_stderr: false
+        staff_viewer:
+          show_stdout: false
+          show_stderr: false

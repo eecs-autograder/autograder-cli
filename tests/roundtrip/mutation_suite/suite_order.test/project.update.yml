@@ -1,0 +1,13 @@
+project:
+  name: Test Project 46ca84ad8be3443fab0e7bb6c09b65f6
+  timezone: America/Chicago
+  course:
+    name: Test Course
+    semester: Summer
+    year: 2014
+  settings:
+  mutation_suites:
+  - name: Suite Spam
+  - name: Suite Egg
+  - name: Suite Waluigi
+  - name: Suite 1

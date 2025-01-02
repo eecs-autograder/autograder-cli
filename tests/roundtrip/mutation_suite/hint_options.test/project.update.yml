@@ -1,0 +1,29 @@
+project:
+  name: Test Project 9535bd7e47034408a43cd33d94f48e08
+  timezone: America/Chicago
+  course:
+    name: Test Course
+    semester: Summer
+    year: 2014
+  settings:
+  mutation_suites:
+  - name: Suite
+    bug_names:
+      spam:
+      - hint 1
+      - hint2
+      - hint 3
+      egg:
+      - eggy hint 1
+      - eggy hint 10
+      - eggy hint 42
+      sausage:
+      - hint1
+      spam2:
+      - very spam
+    hint_options:
+      hint_limit_per_day: 4
+      daily_limit_reset_time: 9:00pm
+      hint_limit_per_submission: 2
+      obfuscate_bug_names: sequential
+      obfuscated_bug_names_prefix: 'Mutant '

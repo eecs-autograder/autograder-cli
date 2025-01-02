@@ -1,0 +1,24 @@
+project:
+  name: Test Project 9535bd7e47034408a43cd33d94f48e08
+  timezone: America/Chicago
+  course:
+    name: Test Course
+    semester: Summer
+    year: 2014
+  settings:
+  mutation_suites:
+  - name: Suite
+    bug_names:
+      spam:
+      - hint 1
+      - hint2
+      egg:
+      - eggy hint 1
+      - eggy hint 42
+      sausage: []
+    hint_options:
+      hint_limit_per_day: 5
+      daily_limit_reset_time: 8:00pm
+      hint_limit_per_submission: 1
+      obfuscate_bug_names: hash
+      obfuscated_bug_names_prefix: Waluigi

@@ -1,0 +1,27 @@
+project:
+  name: Test Project 51b8df7b7bbb43beab364f4d3853ca43
+  timezone: America/Chicago
+  course:
+    name: Test Course
+    semester: Summer
+    year: 2014
+  settings: {}
+  mutation_suites:
+  - name: Suite
+    feedback:
+      normal:
+        show_invalid_test_names: false
+        show_points: true
+        bugs_detected: "all_bug_names"
+      final_graded_submission:
+        show_invalid_test_names: true
+        show_points: false
+        bugs_detected: "hide"
+      past_limit_submission:
+        show_invalid_test_names: true
+        show_points: true
+        bugs_detected: "detected_bug_names"
+      staff_viewer:
+        show_invalid_test_names: false
+        show_points: false
+        bugs_detected: "num_bugs_detected"

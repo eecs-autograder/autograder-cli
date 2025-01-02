@@ -773,16 +773,32 @@ class ResourceLimits(BaseModel):
 
 
 class MutationCommandFeedbackOptions(BaseModel):
-    show_return_code: bool = True
-    show_stdout: bool = True
-    show_stderr: bool = True
+    show_return_code: bool
+    show_stdout: bool
+    show_stderr: bool
 
 
 class MutationSetupCmdFeedback(BaseModel):
-    normal: MutationCommandFeedbackOptions = MutationCommandFeedbackOptions()
-    final_graded_submission: MutationCommandFeedbackOptions = MutationCommandFeedbackOptions()
-    past_limit_submission: MutationCommandFeedbackOptions = MutationCommandFeedbackOptions()
-    staff_viewer: MutationCommandFeedbackOptions = MutationCommandFeedbackOptions()
+    normal: MutationCommandFeedbackOptions = MutationCommandFeedbackOptions(
+        show_return_code=True,
+        show_stdout=False,
+        show_stderr=False,
+    )
+    final_graded_submission: MutationCommandFeedbackOptions = MutationCommandFeedbackOptions(
+        show_return_code=True,
+        show_stdout=False,
+        show_stderr=False,
+    )
+    past_limit_submission: MutationCommandFeedbackOptions = MutationCommandFeedbackOptions(
+        show_return_code=False,
+        show_stdout=False,
+        show_stderr=False,
+    )
+    staff_viewer: MutationCommandFeedbackOptions = MutationCommandFeedbackOptions(
+        show_return_code=True,
+        show_stdout=True,
+        show_stderr=True,
+    )
 
 
 class MutationSetupCmd(BaseModel):
@@ -793,10 +809,26 @@ class MutationSetupCmd(BaseModel):
 
 
 class TestDiscoveryFeedback(BaseModel):
-    normal: MutationCommandFeedbackOptions = MutationCommandFeedbackOptions()
-    final_graded_submission: MutationCommandFeedbackOptions = MutationCommandFeedbackOptions()
-    past_limit_submission: MutationCommandFeedbackOptions = MutationCommandFeedbackOptions()
-    staff_viewer: MutationCommandFeedbackOptions = MutationCommandFeedbackOptions()
+    normal: MutationCommandFeedbackOptions = MutationCommandFeedbackOptions(
+        show_return_code=True,
+        show_stdout=True,
+        show_stderr=True,
+    )
+    final_graded_submission: MutationCommandFeedbackOptions = MutationCommandFeedbackOptions(
+        show_return_code=True,
+        show_stdout=True,
+        show_stderr=True,
+    )
+    past_limit_submission: MutationCommandFeedbackOptions = MutationCommandFeedbackOptions(
+        show_return_code=False,
+        show_stdout=False,
+        show_stderr=False,
+    )
+    staff_viewer: MutationCommandFeedbackOptions = MutationCommandFeedbackOptions(
+        show_return_code=True,
+        show_stdout=True,
+        show_stderr=True,
+    )
 
 
 class TestDiscoveryCmd(BaseModel):
@@ -933,7 +965,7 @@ class MutantHintOptions(BaseModel):
     ] = datetime.time(hour=0)
     hint_limit_per_submission: int | None = None
 
-    obfuscate_bug_names: Literal["none", "sequential", "hash"] = "none"
+    obfuscate_bug_names: Literal["none", "sequential", "hash"] = "sequential"
     obfuscated_bug_names_prefix: str = "Bug "
 
 

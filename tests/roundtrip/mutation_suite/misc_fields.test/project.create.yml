@@ -25,9 +25,3 @@ project:
     - test2.py
     allow_network_access: true
     deferred: true
-    # setup:
-    # test_discovery:
-    # false_positives_check:
-    # find_bugs:
-    # feedback:
-    # hint_options:

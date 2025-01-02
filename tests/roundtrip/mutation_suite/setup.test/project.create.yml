@@ -1,0 +1,34 @@
+project:
+  name: Test Project f5c32ce89e0e48fe9405c47da48b3137
+  timezone: America/Chicago
+  course:
+    name: Test Course
+    semester: Summer
+    year: 2014
+  settings:
+  mutation_suites:
+  - name: Suite
+    setup:
+      cmd: ./compile.sh
+      label: Compile
+      resources:
+        time_limit: 30
+        virtual_memory_limit: 200000000
+        block_process_spawn: true
+      feedback:
+        normal:
+          show_return_code: true
+          show_stdout: true
+          show_stderr: false
+        final_graded_submission:
+          show_return_code: true
+          show_stdout: false
+          show_stderr: true
+        past_limit_submission:
+          show_return_code: false
+          show_stdout: true
+          show_stderr: true
+        staff_viewer:
+          show_return_code: false
+          show_stdout: false
+          show_stderr: true

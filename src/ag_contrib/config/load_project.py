@@ -265,6 +265,13 @@ def _load_mutation_suites(client: HTTPClient, project_pk: int) -> list[MutationS
                 ag_schema.MutationTestSuiteHintConfig,
             )
             bug_names = {bug: hint_dict["hints_by_mutant_name"].get(bug, []) for bug in bug_names}
+            hint_options = MutantHintOptions(
+                hint_limit_per_day=hint_dict["num_hints_per_day"],
+                daily_limit_reset_time=validate_time(hint_dict["hint_limit_reset_time"]),
+                hint_limit_per_submission=hint_dict["num_hints_per_submission"],
+                obfuscate_bug_names=hint_dict["obfuscate_mutant_names"],
+                obfuscated_bug_names_prefix=hint_dict["obfuscated_mutant_name_prefix"],
+            )
         except HTTPError as e:
             if e.response.status_code != 404:
                 raise

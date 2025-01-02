@@ -1,0 +1,28 @@
+project:
+  name: Test Project e79be825fd2f4bf1aabc313958e64f73
+  timezone: America/Chicago
+  course:
+    name: Test Course
+    semester: Summer
+    year: 2014
+  settings:
+  mutation_suites:
+  - name: Suite
+    find_bugs:
+      cmd: ./run_test.sh ${student_test_name} ${buggy_impl_name} bug
+      resources:
+        time_limit: 9
+        virtual_memory_limit: 700000
+      feedback:
+        normal:
+          show_stdout: false
+          show_stderr: true
+        final_graded_submission:
+          show_stdout: true
+          show_stderr: true
+        past_limit_submission:
+          show_stdout: false
+          show_stderr: true
+        staff_viewer:
+          show_stdout: true
+          show_stderr: false
