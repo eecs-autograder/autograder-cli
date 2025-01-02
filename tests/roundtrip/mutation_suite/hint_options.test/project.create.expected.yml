@@ -18,7 +18,7 @@ project:
       sausage: []
     hint_options:
       hint_limit_per_day: 5
-      daily_limit_reset_time: 20:00:00
+      daily_limit_reset_time: 08:00PM
       hint_limit_per_submission: 1
       obfuscate_bug_names: hash
       obfuscated_bug_names_prefix: Waluigi

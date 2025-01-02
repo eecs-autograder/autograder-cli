@@ -5,7 +5,7 @@ project:
     name: Test Course
     semester: Summer
     year: 2014
-  settings:
+  settings: {}
   mutation_suites:
   - name: Suite
     feedback:

@@ -778,18 +778,18 @@ class _ProjectSaver:
     def _save_mutant_hint_config(self, suite_config: MutationSuiteConfig, suite_pk: int):
         print("  Checking mutant hint config...")
 
-        try:
-            hint_config = do_get(
-                self.client,
-                f"/api/mutation_test_suites/{suite_pk}/hint_config/",
-                ag_schema.MutationTestSuiteHintConfig,
-            )
-            print("  Hint config loaded")
-        except HTTPError as e:
-            if e.response.status_code != 404:
-                raise
+        if isinstance(suite_config.bug_names, dict):
+            try:
+                hint_config = do_get(
+                    self.client,
+                    f"/api/mutation_test_suites/{suite_pk}/hint_config/",
+                    ag_schema.MutationTestSuiteHintConfig,
+                )
+                print("  Hint config loaded")
+            except HTTPError as e:
+                if e.response.status_code != 404:
+                    raise
 
-            if isinstance(suite_config.bug_names, dict):
                 hint_config = do_post(
                     self.client,
                     f"/api/mutation_test_suites/{suite_pk}/hint_config/",
@@ -798,18 +798,15 @@ class _ProjectSaver:
                 )
                 print("  Hint config created")
 
-        if isinstance(suite_config.bug_names, dict):
             print("  Updating hint config")
             do_patch(
                 self.client,
                 f'/api/mutation_test_suite_hint_configs/{hint_config["pk"]}/',
                 {
-                    "hints_by_mutant_name": (
-                        suite_config.bug_names if isinstance(suite_config.bug_names, dict) else {}
-                    ),
+                    "hints_by_mutant_name": suite_config.bug_names,
                     "num_hints_per_day": suite_config.hint_options.hint_limit_per_day,
-                    "hint_limit_reset_time": serialize_time(
-                        suite_config.hint_options.daily_limit_reset_time
+                    "hint_limit_reset_time": (
+                        suite_config.hint_options.daily_limit_reset_time.isoformat()
                     ),
                     "hint_limit_reset_timezone": self.config.project.timezone.key,
                     "num_hints_per_submission": (
