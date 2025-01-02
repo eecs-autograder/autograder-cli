@@ -1,0 +1,28 @@
+project:
+  name: Test Project e07d97d4fb3d49dcb79a68c51b1a9a3f
+  timezone: America/Chicago
+  course:
+    name: Test Course
+    semester: Summer
+    year: 2014
+  settings:
+  test_suites:
+  - name: Suite
+    test_cases:
+    - name: Test $testid
+      cmd: echo hello
+      repeat:
+      - $testid: 2
+      - $testid: 5
+      - $testid: 4
+    - name: Test 42
+      cmd: wee
+    - name: Multi test
+      commands:
+      - name: Cmd $cmdid
+        cmd: echo wee
+        repeat:
+        - $cmdid: 7
+        - $cmdid: 4
+        - $cmdid: 3
+        - $cmdid: 1

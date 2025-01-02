@@ -251,53 +251,59 @@ class _ProjectSaver:
         assert self.project_pk is not None
 
         print("Checking test suites")
-        test_suites = do_get_list(
-            self.client,
-            f"/api/projects/{self.project_pk}/ag_test_suites/",
-            ag_schema.AGTestSuite,
-        )
-        test_suites = {item["name"]: item for item in test_suites}
+        existing_suites = {
+            suite["name"]: suite
+            for suite in do_get_list(
+                self.client,
+                f"/api/projects/{self.project_pk}/ag_test_suites/",
+                ag_schema.AGTestSuite,
+            )
+        }
 
+        suite_order: list[int] = []
         for suite_config in self.config.project.test_suites:
             print("* Checking test suite", suite_config.name, "...")
-            if suite_config.name not in test_suites:
+            if suite_config.name not in existing_suites:
                 suite_data = do_post(
                     self.client,
                     f"/api/projects/{self.project_pk}/ag_test_suites/",
                     self._make_save_test_suite_request_body(suite_config),
                     ag_schema.AGTestSuite,
                 )
-                test_suites[suite_config.name] = suite_data
+                existing_suites[suite_data["name"]] = suite_data
                 print("  Created", suite_config.name)
             else:
                 suite_data = do_patch(
                     self.client,
-                    f'/api/ag_test_suites/{test_suites[suite_config.name]["pk"]}/',
+                    f'/api/ag_test_suites/{existing_suites[suite_config.name]["pk"]}/',
                     self._make_save_test_suite_request_body(suite_config),
                     ag_schema.AGTestSuite,
                 )
                 print("  Updated", suite_config.name)
 
-            test_cases = {
-                test["name"]: test for test in test_suites[suite_config.name]["ag_test_cases"]
+            suite_order.append(suite_data["pk"])
+
+            existing_tests = {
+                test["name"]: test for test in existing_suites[suite_config.name]["ag_test_cases"]
             }
+            test_order: list[int] = []
             for test_config in suite_config.test_cases:
                 for unrolled_test in test_config.do_repeat():
                     test_data = self._save_test_case(
                         unrolled_test,
-                        test_suites[suite_config.name]["pk"],
-                        test_cases,
+                        existing_suites[suite_config.name]["pk"],
+                        existing_tests,
                     )
-                    test_cases[test_config.name] = test_data
 
-            test_order = [test_cases[test.name]["pk"] for test in suite_config.test_cases]
+                    existing_tests[test_data["name"]] = test_data
+                    test_order.append(test_data["pk"])
+
             test_order_response = self.client.put(
                 f"/api/ag_test_suites/{suite_data['pk']}/ag_test_cases/order/",
                 json=test_order,
             )
             check_response_status(test_order_response)
 
-        suite_order = [test_suites[suite.name]["pk"] for suite in self.config.project.test_suites]
         suite_order_response = self.client.put(
             f"/api/projects/{self.project_pk}/ag_test_suites/order/",
             json=suite_order,
@@ -345,7 +351,6 @@ class _ProjectSaver:
         suite_pk: int,
         existing_tests: Mapping[str, ag_schema.AGTestCase],
     ):
-        existing_tests = dict(copy.deepcopy(existing_tests))
         print("  * Checking test case", test.name, "...")
         if test.name not in existing_tests:
             test_data = do_post(
@@ -386,6 +391,7 @@ class _ProjectSaver:
                     )
                     print("      Updated")
             case MultiCmdTestCaseConfig():
+                command_order: list[int] = []
                 for cmd in test.commands:
                     # Note: Commands are already unrolled
                     # in MultiCmdTestCaseConfig.do_repeat(),
@@ -399,10 +405,9 @@ class _ProjectSaver:
                             request_body=self._make_save_multi_cmd_test_request_body(cmd),
                             response_type=ag_schema.AGTestCommand,
                         )
-                        existing_cmds[cmd_data["name"]] = cmd_data
                         print("      Created")
                     else:
-                        do_patch(
+                        cmd_data = do_patch(
                             self.client,
                             f'/api/ag_test_commands/{existing_cmds[cmd.name]["pk"]}/',
                             request_body=self._make_save_multi_cmd_test_request_body(cmd),
@@ -410,8 +415,9 @@ class _ProjectSaver:
                         )
                         print("      Updated")
 
+                    command_order.append(cmd_data["pk"])
+
                 print("    Updating command order")
-                command_order = [existing_cmds[cmd.name]["pk"] for cmd in test.commands]
                 command_order_response = self.client.put(
                     f"/api/ag_test_cases/{test_data['pk']}/ag_test_commands/order/",
                     json=command_order,

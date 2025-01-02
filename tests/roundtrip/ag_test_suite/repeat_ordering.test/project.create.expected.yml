@@ -1,0 +1,29 @@
+project:
+  name: Test Project e07d97d4fb3d49dcb79a68c51b1a9a3f
+  timezone: America/Chicago
+  course:
+    name: Test Course
+    semester: Summer
+    year: 2014
+  settings: {}
+  test_suites:
+  - name: Suite
+    test_cases:
+    - name: Test 42
+      cmd: wee
+    - name: Test 4
+      cmd: echo hello
+    - name: Test 5
+      cmd: echo hello
+    - name: Test 2
+      cmd: echo hello
+    - name: Multi test
+      commands:
+      - name: Cmd 3
+        cmd: echo wee
+      - name: Cmd 7
+        cmd: echo wee
+      - name: Cmd 4
+        cmd: echo wee
+      - name: Cmd 1
+        cmd: echo wee
