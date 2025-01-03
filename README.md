@@ -165,6 +165,8 @@ Run isort, black, pycodestyle, pydocstyle, and pyright to check for style, forma
 Python code should be formatted using isort and black.
 
 ### Tests
+This project uses pytest as its test runner.
+Most of the test cases are currently "roundtrip" tests that save and load a configuration.
 To generate a new roundtrip test, run:
 ```
 ./dev_scripts/new_roundtrip_test.sh {test name}
@@ -179,6 +181,9 @@ Roundtrip tests consist of the following steps:
 4. Load that project and compare the loaded version with `{test name}/project.update.expected.yml`.
 
 When testing deadline formats (e.g., fixed cutoff, relative cutoff), you can specify which format to load deadlines into in the file `{test name}/deadline_cutoff_preference`.
+
+In the `.expected.yml` files, if you haven't set any values in `project.settings`, you will need to set `project.settings` to an empty dictionary.
+We haven't made the `new_roundtrip_test.sh` script make this change because it serves as a way to have new test cases fail until they are edited.
 
 ### The HTTPClient
 The `HTTPClient` class is a starting point for sending custom requests in Python applications.
