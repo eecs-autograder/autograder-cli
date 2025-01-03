@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "autograder-cli"
-version = "2025.1.0.dev1"
+version = "2024.08.0.dev1"
 authors = [
   { name="James Perretta", email="jameslp@umich.edu" },
 ]

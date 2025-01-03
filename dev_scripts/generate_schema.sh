@@ -1,5 +1,10 @@
 #! /bin/bash
 
+# Generate Python schema classes from the Autograder.io API schema.
+# Uses the version of the API schema saved to
+# src/ag_contrib/config/generated/schema.yml
+# Replace that file and rerun this script to update to a newer version.
+
 project_root=$(dirname "$(realpath $0)")/..
 
 datamodel-codegen \
