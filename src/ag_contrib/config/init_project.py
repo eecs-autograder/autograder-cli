@@ -72,12 +72,6 @@ def init_project(
                 student_files_needed=["test_*.py"],
                 bug_names={"bug1": ["Hint 1", "Hint 2"], "bug2": ["Hint 1"]},
                 points_per_bug=Decimal(3),
-                # setup=,
-                # test_discovery=,
-                # false_positives_check=,
-                # find_bugs=,
-                # feedback=,
-                # hint_options=,
             )
         ],
     )
