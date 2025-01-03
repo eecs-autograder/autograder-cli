@@ -6,8 +6,11 @@ from typing import Final, Protocol, overload
 import yaml
 from requests import HTTPError
 
-import ag_contrib.config.generated.schema as ag_schema
-from ag_contrib.config.models import (
+import autograder_cli.config.autograder_io_schema.schema as ag_schema
+from autograder_cli.http_client import HTTPClient, check_response_status
+from autograder_cli.utils import get_api_token
+
+from .models import (
     AGConfig,
     AGConfigError,
     BugsDetectedFeedback,
@@ -31,9 +34,6 @@ from ag_contrib.config.models import (
     TestDiscoveryFeedback,
     TestSuiteConfig,
 )
-from ag_contrib.http_client import HTTPClient, check_response_status
-from ag_contrib.utils import get_api_token
-
 from .utils import do_get, do_get_list, do_patch, do_post, get_project_from_course
 
 

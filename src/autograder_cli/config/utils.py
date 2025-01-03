@@ -4,7 +4,7 @@ import yaml
 from pydantic import TypeAdapter
 from requests import Response
 
-import ag_contrib.config.generated.schema as ag_schema
+import autograder_cli.config.autograder_io_schema.schema as ag_schema
 
 from ..http_client import HTTPClient, check_response_status
 from .models import AGConfig, AGConfigError

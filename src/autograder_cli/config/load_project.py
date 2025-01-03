@@ -6,10 +6,9 @@ from typing import Final, Literal
 from pydantic import TypeAdapter
 from requests import HTTPError
 
-import ag_contrib.config.generated.schema as ag_schema
-from ag_contrib.config.time_processing import validate_time
-from ag_contrib.http_client import HTTPClient
-from ag_contrib.utils import get_api_token
+import autograder_cli.config.autograder_io_schema.schema as ag_schema
+from autograder_cli.http_client import HTTPClient
+from autograder_cli.utils import get_api_token
 
 from .models import (
     AGConfig,
@@ -41,6 +40,7 @@ from .models import (
     validate_datetime,
     validate_timezone,
 )
+from .time_processing import validate_time
 from .utils import do_get, do_get_list, get_project_from_course, write_yaml
 
 

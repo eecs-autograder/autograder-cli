@@ -22,7 +22,7 @@ from pydantic import (
     model_validator,
 )
 
-from ag_contrib.config.generated import schema as ag_schema
+from autograder_cli.config.autograder_io_schema import schema as ag_schema
 
 from .time_processing import (
     serialize_datetime,

@@ -4,8 +4,8 @@ from pathlib import Path
 
 from tzlocal import get_localzone
 
-from ag_contrib.config.generated.schema import Semester
-from ag_contrib.config.models import (
+from .autograder_io_schema.schema import Semester
+from .models import (
     AGConfig,
     CourseSelection,
     DeadlineWithRelativeCutoff,
@@ -19,7 +19,6 @@ from ag_contrib.config.models import (
     SingleCmdTestCaseConfig,
     TestSuiteConfig,
 )
-
 from .utils import write_yaml
 
 

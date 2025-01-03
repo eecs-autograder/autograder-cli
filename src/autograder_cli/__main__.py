@@ -9,12 +9,11 @@ from typing import get_args
 
 from requests import HTTPError
 
-from .http_client import HTTPClient, check_response_status
-
-from .config.generated.schema import Semester
+from .config.autograder_io_schema.schema import Semester
 from .config.init_project import init_project
 from .config.load_project import load_project
 from .config.save_project import save_project
+from .http_client import HTTPClient, check_response_status
 
 
 def main():
