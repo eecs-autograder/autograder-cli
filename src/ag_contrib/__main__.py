@@ -40,6 +40,7 @@ def parse_args():
     )
 
     tool_parsers = parser.add_subparsers(required=True)
+
     project_config_parser = tool_parsers.add_parser("project")
     _project_config_parse_args(project_config_parser)
 
