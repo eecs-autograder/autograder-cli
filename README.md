@@ -21,21 +21,40 @@ Save the file you are prompted to download as `.agtoken` in your home directory 
 #### Save a Project
 
 ## Dev Setup
+### Clone the Repository
+```
+git clone --recursive git@github.com:eecs-autograder/autograder-cli.git
+```
+
+If you omitted the `--recursive` flag, initialize the submodule with:
+```
+git submodule update --init
+```
+
 ### Install Dependencies
+Create and activate a virtual environment:
+```
+python3.10 -m venv venv
+source venv/bin/activate
+```
+
+Install package dependencies and install the autograder-cli as a local editable package:
 ```
 pip install pip-tools
 ./dev_scripts/install_deps.sh
+```
 
-# dyff is used for comparing yaml files in test cases
+Install dyff for comparing yaml files in test cases:
+```
 https://github.com/homeport/dyff
 curl --silent --location https://git.io/JYfAY | bash
 ```
 
 ### Linters
+Run isort, black, pycodestyle, pydocstyle, and pyright to check for style, formatting, and type issues:
 ```
 ./dev_scripts/lint.sh
 ```
-This command runs isort, black, pycodestyle, pydocstyle, and pyright to check for style, formatting, and type issues.
 Python code should be formatted using isort and black.
 
 ### Tests
