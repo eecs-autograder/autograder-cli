@@ -1,10 +1,10 @@
 [build-system]
-requires = ["setuptools"]#, "setuptools-scm"]
+requires = ["setuptools"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "autograder-contrib"
-version = "2.0.0.dev1"
+name = "autograder-cli"
+version = "2025.1.0.dev1"
 authors = [
   { name="James Perretta", email="jameslp@umich.edu" },
 ]
@@ -16,14 +16,13 @@ classifiers = [
     "Programming Language :: Python :: 3",
     "License :: OSI Approved :: GNU Lesser General Public License v3 (LGPLv3)"
 ]
-#license = "GNU Lesser General Public License v3"
-keywords = ["autograder"]
+keywords = ["autograder", "autograder.io"]
 
 dynamic = ["dependencies"]
 
 [project.urls]
-Homepage = "https://github.com/eecs-autograder/autograder-contrib"
-Issues = "https://github.com/eecs-autograder/autograder-contrib/issues"
+Homepage = "https://github.com/eecs-autograder/autograder-cli"
+Issues = "https://github.com/eecs-autograder/autograder-cli/issues"
 
 [project.scripts]
 agcli = "ag_contrib.http_client:main"

@@ -1,26 +1,60 @@
 # Autograder.io Command-Line Interface
-Contains utilities for writing applications that use the autograder.io API.
+A command-line tool for managing assignments on Autograder.io.
 
-We recommend Amir Kamil's [autograder-tools](https://gitlab.eecs.umich.edu/akamil/autograder-tools/tree/master) for a larger collection of applications.
+We also recommend Amir Kamil's [autograder-tools](https://gitlab.eecs.umich.edu/akamil/autograder-tools/tree/master) as a complimentary collection of applications.
 
-# Install with pip
+## Quickstart
+### Install
+While this tool is usable in its current state, things may change between now and our first official release.
+To install the latest development release, pass the `--pre` flag to pip as below:
 ```
-pip install autograder-contrib
+pip install --pre autograder-cli
 ```
 
-# Obtaining a Token
+### Obtain API Token
 Visit https://autograder.io/web/__apitoken__ and sign in.
 Save the file you are prompted to download as `.agtoken` in your home directory or the directory.
 
-# The Command Line Interface
-This library provides a simple command line interface for sending requests:
+### Common Usage
+#### Create a New Project
+#### Download an Existing Project
+#### Save a Project
+
+## Dev Setup
+### Install Dependencies
 ```
-$ agcli get /api/users/current/
+pip install pip-tools
+./dev_scripts/install_deps.sh
+
+# dyff is used for comparing yaml files in test cases
+https://github.com/homeport/dyff
+curl --silent --location https://git.io/JYfAY | bash
 ```
 
-This interface notably does not support delete requests for safety reasons. If you wish to delete something, please do so through the autograder.io website or (at your own risk) you may use the HTTPClient class described in the next section.
+### Linters
+```
+./dev_scripts/lint.sh
+```
+This command runs isort, black, pycodestyle, pydocstyle, and pyright to check for style, formatting, and type issues.
+Python code should be formatted using isort and black.
 
-# The HTTPClient
+### Tests
+To generate a new roundtrip test, run:
+```
+./dev_scripts/new_roundtrip_test.sh {test name}
+```
+
+The test name can include directories (e.g., ag_test_suite/setup_cmd).
+This will initialize a roundtrip test in tests/roundtrip/{test name}.test.
+Roundtrip tests consist of the following steps:
+1. Save the project found in `{test name}/project.create.yml`.
+2. Load that project and compare the loaded version with `{test name}/project.create.expected.yml`.
+3. Save the project found in `{test name}/project.update.yml`. (this is intended to be the same project that was created in step one, but with some fields changed)
+4. Load that project and compare the loaded version with `{test name}/project.update.expected.yml`.
+
+When testing deadline formats (e.g., fixed cutoff, relative cutoff), you can specify which format to load deadlines into in the file `{test name}/deadline_cutoff_preference`.
+
+### The HTTPClient
 The `HTTPClient` class is a starting point for sending custom requests in Python applications.
 ```
 import json
@@ -31,6 +65,3 @@ response = client.get('/api/users/current/')
 check_response_status(response)
 print(json.dumps(response.json(), indent=4))
 ```
-# Developer Setup
-https://github.com/homeport/dyff
-curl --silent --location https://git.io/JYfAY | bash
