@@ -48,7 +48,8 @@ class AGConfig(BaseModel):
     feedback_presets_test_suite_setup: dict[str, ag_schema.AGTestSuiteFeedbackConfig] = Field(
         default_factory=lambda: BUILTIN_TEST_SUITE_FDBK_PRESETS
     )
-    docker_images: dict[str, DockerImage] = {}
+    # TODO: Restore when we add image building support
+    # docker_images: dict[str, DockerImage] = {}
 
 
 class ProjectConfig(BaseModel):

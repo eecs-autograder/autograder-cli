@@ -1,9 +1,15 @@
 """
-Set up autograder.io assignments using a YAML config file.
+Command-line entrypoints for project management commands
+and http client usage.
 """
 
 import argparse
+import json
 from typing import get_args
+
+from requests import HTTPError
+
+from .http_client import HTTPClient, check_response_status
 
 from .config.generated.schema import Semester
 from .config.init_project import init_project
@@ -34,8 +40,17 @@ def parse_args():
     )
 
     tool_parsers = parser.add_subparsers(required=True)
-    config_parser = tool_parsers.add_parser("project")
-    subparsers = config_parser.add_subparsers(required=True)
+    project_config_parser = tool_parsers.add_parser("project")
+    _project_config_parse_args(project_config_parser)
+
+    http_parser = tool_parsers.add_parser("http")
+    _http_parse_args(http_parser)
+
+    return parser.parse_args()
+
+
+def _project_config_parse_args(project_config_parser: argparse.ArgumentParser):
+    subparsers = project_config_parser.add_subparsers(required=True)
 
     init_project_parser = subparsers.add_parser("init")
     init_project_parser.add_argument("course_name")
@@ -63,10 +78,65 @@ def parse_args():
     )
     load_project_parser.set_defaults(func=load_project)
 
-    return parser.parse_args()
+
+DEFAULT_config_file = "agproject.yml"
 
 
-DEFAULT_config_file = "ag_project.yml"
+def http_main(
+    action: str, url: str, *, quiet: bool, json_body: str | None, base_url: str, token_file: str
+):
+    body: dict[str, object] = {} if json_body is None else json.loads(json_body)
+
+    client = HTTPClient.make_default(token_filename=token_file, base_url=base_url)
+    try:
+        if action == "get":
+            response = client.get(url)
+            check_response_status(response)
+            print(json.dumps(response.json(), indent=4))
+        elif action == "get_pages":
+            response = list(client.get_paginated(url))
+            print(json.dumps(response, indent=4))
+        elif action == "post":
+            response = client.post(url, json=body)
+            check_response_status(response)
+            if not quiet:
+                print(json.dumps(response.json(), indent=4))
+        elif action == "put":
+            response = client.put(url, json=body)
+            check_response_status(response)
+            if not quiet:
+                print(json.dumps(response.json(), indent=4))
+        elif action == "patch":
+            response = client.patch(url, json=body)
+            check_response_status(response)
+            if not quiet:
+                print(json.dumps(response.json(), indent=4))
+    except HTTPError as e:
+        if not quiet:
+            print(json.dumps(e.response.json()))
+        exit(1)
+
+
+def _http_parse_args(http_parser: argparse.ArgumentParser):
+    http_parser.add_argument("action", choices=("get", "get_pages", "post", "put", "patch"))
+    http_parser.add_argument("url", type=str)
+
+    http_parser.add_argument(
+        "--json_body",
+        "-j",
+        type=str,
+        default=None,
+        help="JSON data (string-encoded) to be added to the request body.",
+    )
+    http_parser.add_argument(
+        "--quiet",
+        "-q",
+        default=False,
+        action="store_true",
+        help="Don't print the response data for POST, PUT, and PATCH requests.",
+    )
+
+    http_parser.set_defaults(func=http_main)
 
 
 if __name__ == "__main__":
