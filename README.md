@@ -28,6 +28,23 @@ ag --base_url https://your.url.com http get /api/users/current/
 ```
 You may want to alias `ag --base_url https://your.url.com` in your shell profile for convenience.
 
+### Configure Autocomplete in VSCode
+1. Install the [VSCode YAML plugin](https://marketplace.visualstudio.com/items?itemName=redhat.vscode-yaml) (published by RedHat).
+2. Generate the Autograder.io CLI JSON Schema:
+```
+ag write-schema
+```
+This will create a file called `autograder_io_cli_schema.json` in the directory the above command was run in.
+3. Add the following to your VSCode settings.json:
+```
+    "yaml.schemas": {
+        "/path/to//autograder_io_cli_schema.json": ["agproject.yml", "*.agproject.yml"]
+    }
+```
+This will cause the YAML plugin to recognize `agproject.yml` and `*.agproject.yml` files as using the Autograder.io CLI schema.
+
+Pull requests are welcome that add instructions for setting up autocomplete on other editors.
+
 ### Common Usage
 #### New Project From Scratch
 Use the following command to create a project config file with default values.

@@ -12,6 +12,7 @@ from requests import HTTPError
 from .config.autograder_io_schema.schema import Semester
 from .config.init_project import init_project
 from .config.load_project import load_project
+from .config.models import AGConfig
 from .config.save_project import save_project
 from .http_client import HTTPClient, check_response_status
 
@@ -45,6 +46,10 @@ def parse_args():
 
     http_parser = tool_parsers.add_parser("http")
     _http_parse_args(http_parser)
+
+    write_schema_parser = tool_parsers.add_parser("write-schema")
+    write_schema_parser.add_argument('filename', nargs='?', default='autograder_io_cli_schema.json')
+    write_schema_parser.set_defaults(func=write_json_schema)
 
     return parser.parse_args()
 
@@ -137,6 +142,11 @@ def _http_parse_args(http_parser: argparse.ArgumentParser):
     )
 
     http_parser.set_defaults(func=http_main)
+
+
+def write_json_schema(filename: str, *args: object, **kwargs: object):
+    with open(filename, 'w') as f:
+        json.dump(AGConfig.model_json_schema(), f, indent=2)
 
 
 if __name__ == "__main__":
