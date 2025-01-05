@@ -174,6 +174,22 @@ https://github.com/homeport/dyff
 curl --silent --location https://git.io/JYfAY | bash
 ```
 
+### Build the Local autograder-server Stack
+Build and start the stack:
+```
+./dev_scripts/local_stack.sh build
+./dev_scripts/local_stack.sh up -d
+```
+`./dev_scripts/local_stack.sh` is an alias for a docker-compose command.
+
+Generate the gpg secrets for the autograder-server stack:
+```
+python -m pip install Django==3.1 python-gnupg
+cd tests/local_stack/autograder-server && python3 generate_secrets.py
+```
+
+[Running the tests](Tests) will finish preparing the stack by applying migrations and clearing the database.
+
 ### Linters
 Run isort, black, pycodestyle, pydocstyle, and pyright to check for style, formatting, and type issues:
 ```
