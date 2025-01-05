@@ -168,9 +168,8 @@ pip install pip-tools
 ./dev_scripts/install_deps.sh
 ```
 
-Install dyff for comparing yaml files in test cases:
+Install [dyff](https://github.com/homeport/dyff) for comparing yaml files in test cases:
 ```
-https://github.com/homeport/dyff
 curl --silent --location https://git.io/JYfAY | bash
 ```
 
