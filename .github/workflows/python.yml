@@ -1,0 +1,44 @@
+name: Autograder.io CLI CI
+
+on:
+  push:
+    branches: [ develop ]
+  pull_request:
+
+jobs:
+  lint:
+    runs-on: ubuntu-22.04
+
+    strategy:
+      matrix:
+        python-version: [3.10]
+
+    steps:
+    - uses: actions/checkout@v4
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - run: ./dev_scripts/install_deps.sh
+    - run: ./dev_scripts/lint.sh
+
+  test:
+    needs: lint
+
+    runs-on: ubuntu-22.04
+
+    strategy:
+      matrix:
+        python-version: [3.10]
+
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: true
+
+    - run: ./dev_scripts/install_deps.sh
+    - run: ./dev_scripts/local_stack.sh build
+    - run: ./dev_scripts/local_stack.sh pull
+    - run: ./dev_scripts/local_stack.sh up -d
+    - run: docker ps -a
