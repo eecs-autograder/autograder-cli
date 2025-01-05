@@ -1,3 +1,5 @@
+#! /bin/bash
+
 set -xe
 
 script_dir=$(dirname "$(realpath $0)")

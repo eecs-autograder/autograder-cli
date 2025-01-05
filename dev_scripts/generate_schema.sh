@@ -1,5 +1,7 @@
 #! /bin/bash
 
+set -e
+
 # Generate Python schema classes from the Autograder.io API schema.
 # Uses the version of the API schema saved to
 # src/ag_contrib/config/autograder_io_schema/schema.yml
