@@ -15,7 +15,7 @@ _ROUNDTRIP_TESTS_DIR = Path(__file__).parent.resolve()
 def test_roundtrip(roundtrip_test_dir: Path):
     print(roundtrip_test_dir)
 
-    cmd_base = "python -m ag_contrib -u http://localhost:9002"
+    cmd_base = "ag -u http://localhost:9002"
     if (cutoff_preference_file := roundtrip_test_dir / "deadline_cutoff_preference").exists():
         with open(cutoff_preference_file) as f:
             deadline_cutoff_preference = ["-d", f.read().strip()]

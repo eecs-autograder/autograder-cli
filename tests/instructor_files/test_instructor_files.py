@@ -7,7 +7,7 @@ _INSTRUCTOR_FILE_TESTS_DIR = Path(__file__).parent.resolve()
 
 
 def test_instructor_files():
-    cmd_base = "python -m ag_contrib -u http://localhost:9002"
+    cmd_base = "ag -u http://localhost:9002"
 
     for stage in ["create", "update"]:
         dirname = _INSTRUCTOR_FILE_TESTS_DIR / stage
