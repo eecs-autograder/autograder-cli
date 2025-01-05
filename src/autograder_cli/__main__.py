@@ -48,7 +48,9 @@ def parse_args():
     _http_parse_args(http_parser)
 
     write_schema_parser = tool_parsers.add_parser("write-schema")
-    write_schema_parser.add_argument('filename', nargs='?', default='autograder_io_cli_schema.json')
+    write_schema_parser.add_argument(
+        "filename", nargs="?", default="autograder_io_cli_schema.json"
+    )
     write_schema_parser.set_defaults(func=write_json_schema)
 
     return parser.parse_args()
@@ -145,7 +147,7 @@ def _http_parse_args(http_parser: argparse.ArgumentParser):
 
 
 def write_json_schema(filename: str, *args: object, **kwargs: object):
-    with open(filename, 'w') as f:
+    with open(filename, "w") as f:
         json.dump(AGConfig.model_json_schema(), f, indent=2)
 
 
