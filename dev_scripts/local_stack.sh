@@ -17,9 +17,9 @@ if [ $1 == "init" ]; then
     $docker_compose up -d
     docker ps -a
     echo "Generating autograder-server gpg secrets"
-    python -m pip install Django==3.1 python-gnupg
+    python -m pip install --no-input Django==3.1 python-gnupg
     cd tests/local_stack/autograder-server && python3 generate_secrets.py
-    python -m pip uninstall Django==3.1 python-gnupg
+    python -m pip uninstall --no-input Django==3.1 python-gnupg
 else
     $docker_compose $@
 fi
