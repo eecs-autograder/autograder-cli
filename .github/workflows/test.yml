@@ -130,9 +130,10 @@ jobs:
 
     - name: Initialize, save, and load project. SANITY CHECK THIS OUTPUT.
       run: |
+        echo "fake token" > test.agtoken
         ag project init 'Test Course' Summer 2014 'Wheel Test Project'
-        ag -t <(echo "fake token") -u http://localhost:9002 project save
-        ag -t <(echo "fake token") -u http://localhost:9002 project load 'Test Course' Summer 2014 'Wheel Test Project' loaded.agproject.yml
+        ag -t test.agtoken -u http://localhost:9002 project save
+        ag -t test.agtoken -u http://localhost:9002 project load 'Test Course' Summer 2014 'Wheel Test Project' loaded.agproject.yml
         cat agproject.yml
         cat loaded.agproject.yml
 
