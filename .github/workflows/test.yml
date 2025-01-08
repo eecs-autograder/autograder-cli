@@ -58,9 +58,8 @@ jobs:
     - name: Install dyff
       run: curl --silent --location https://git.io/JYfAY | bash
 
-    # FIXME: UNCOMMENT
-    # - name: Test
-    #   run: ./dev_scripts/test.sh
+    - name: Test
+      run: ./dev_scripts/test.sh
 
   # build-wheel should run on any push to a release branch.
   # test-wheel runs on build-wheel success.
