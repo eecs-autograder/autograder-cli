@@ -17,7 +17,7 @@ classifiers = [
 ]
 keywords = ["autograder", "autograder.io"]
 
-dynamic = ["dependencies"]
+dynamic = ["dependencies", "version"]
 
 [project.urls]
 Homepage = "https://github.com/eecs-autograder/autograder-cli"
