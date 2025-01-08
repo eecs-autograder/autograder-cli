@@ -145,11 +145,13 @@ Removing these entries from the config file and saving the project will NOT dele
 If you need to delete those entires, please do so through the Autograder.io website.
 
 ## Versioning
-This package uses calendar versioning following [Python conventions](https://packaging.python.org/en/latest/discussions/versioning/), with version numbers of the form `year.month.X`, where `X` is for minor versions.
+This package uses calendar versioning following [Python conventions](https://packaging.python.org/en/latest/discussions/versioning/), with version numbers of the form `yy.mm.X`, where `X` is for minor versions.
+For example: `24.8.0` corresponds to August 2024.
 We also make use of pre-release tags such as `.devX`.
 
 The year and month of the release specify the earliest version of the Autograder.io API this package is compatible with.
 However, the minor version number **does not correspond** to Autograder.io's minor version numbers.
+Also note that backwards-incompatible changes to the Autograder.io API may make future versions of that API incompatible with earlier versions of the CLI.
 
 ## Dev Setup
 ### Clone the Repository
