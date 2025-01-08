@@ -6,9 +6,11 @@ services:
       context: ./autograder-server
       dockerfile: Dockerfile-django-dev
     ports:
+      # IMPORTANT: Do not change this port. Tests and CI depend on it.
       - "9002:9002"
     volumes:
       - ./autograder-server:/usr/src/app
+    # IMPORTANT: Do not change this port. Tests and CI depend on it.
     command: >-
       python3 manage.py runserver 0.0.0.0:9002
 

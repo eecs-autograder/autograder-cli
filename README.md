@@ -144,6 +144,13 @@ The CLI currently does NOT support deleting entries such as instructor files, ex
 Removing these entries from the config file and saving the project will NOT delete those entries.
 If you need to delete those entires, please do so through the Autograder.io website.
 
+## Versioning
+This package uses calendar versioning following [Python conventions](https://packaging.python.org/en/latest/discussions/versioning/), with version numbers of the form `year.month.X`, where `X` is for minor versions.
+We also make use of pre-release tags such as `.devX`.
+
+The year and month of the release specify the earliest version of the Autograder.io API this package is compatible with.
+However, the minor version number **does not correspond** to Autograder.io's minor version numbers.
+
 ## Dev Setup
 ### Clone the Repository
 ```

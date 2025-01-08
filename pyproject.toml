@@ -1,10 +1,9 @@
 [build-system]
-requires = ["setuptools"]
+requires = ["setuptools>=64", "setuptools-scm>=8"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "autograder-cli"
-version = "2024.08.0.dev1"
 authors = [
   { name="James Perretta", email="jameslp@umich.edu" },
 ]
@@ -29,6 +28,8 @@ ag = "autograder_cli.__main__:main"
 
 [tool.setuptools.dynamic]
 dependencies = { file = ["requirements.in"] }
+
+[tool.setuptools_scm]
 
 # Note: pycodestyle's toml parser fails when lists have newlines, so we'll
 # configure pycodestyle in lint.sh with command line options until that changes.
