@@ -2,6 +2,6 @@
 
 set -e
 
-pip install --user pip-tools
+pip install pip-tools
 pip-sync requirements.txt requirements-dev.txt
-pip install --user --editable .
+pip install --editable .

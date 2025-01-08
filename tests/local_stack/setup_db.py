@@ -4,8 +4,13 @@ This script is invoked by <project root>/dev_scripts/test.sh
 """
 
 import subprocess
+from typing import TYPE_CHECKING
 
-from typing_extensions import LiteralString
+# We want to be able to run this script from other environments
+# that might not have typing_extensions installed (such as
+# testing the wheel package builds on CI).
+if TYPE_CHECKING:
+    from typing_extensions import LiteralString
 
 
 def setup_db():
@@ -30,13 +35,15 @@ cache.clear()
 
 user = User.objects.get_or_create(username='jameslp@umich.edu')[0]
 
+# IMPORTANT: Do not change the course name/semester/year.
+# Many tests and some CI workflows depend on them having these values.
 c = Course.objects.validate_and_create(name='Test Course', semester='Summer', year=2014)
 c.admins.add(user)
 """
     _run_in_django_container(["python", "manage.py", "shell", "-c", clear_db])
 
 
-def _run_in_django_container(cmd: list[LiteralString], timeout: int = 10):
+def _run_in_django_container(cmd: list['LiteralString'], timeout: int = 10):
     to_run = "docker exec -i ag-cli-test-stack-django-1".split() + cmd
     print("Running command:", to_run)
     return subprocess.run(to_run, timeout=timeout, check=True)
