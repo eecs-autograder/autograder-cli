@@ -157,6 +157,7 @@ Also note that backwards-incompatible changes to the Autograder.io API may make 
 ### Clone the Repository
 ```
 git clone --recursive git@github.com:eecs-autograder/autograder-cli.git
+cd autograder-cli
 ```
 
 If you omitted the `--recursive` flag, initialize the submodule with:
