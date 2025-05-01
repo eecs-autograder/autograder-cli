@@ -195,6 +195,7 @@ Generate the gpg secrets for the autograder-server stack:
 ```
 python -m pip install Django==3.1 python-gnupg
 cd tests/local_stack/autograder-server && python3 generate_secrets.py
+cd -
 ```
 
 [Running the tests](Tests) will finish preparing the stack by applying migrations and clearing the database.
