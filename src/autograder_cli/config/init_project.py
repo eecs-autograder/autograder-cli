@@ -10,6 +10,9 @@ from .models import (
     CourseSelection,
     DeadlineWithRelativeCutoff,
     FnmatchExpectedStudentFile,
+    HandgradingAnnotationConfig,
+    HandgradingConfig,
+    HandgradingCriterionConfig,
     InstructorFileConfig,
     MultiCmdTestCaseConfig,
     MultiCommandConfig,
@@ -73,12 +76,31 @@ def init_project(
                 points_per_bug=Decimal(3),
             )
         ],
+        handgrading=HandgradingConfig(
+            # points_style=''
+            criteria=[
+                HandgradingCriterionConfig(
+                    short_description="Main function not too long",
+                    long_description="The program's main() function should "
+                    "be split up into smaller functions to improve maintainability",
+                    points=3,
+                )
+            ],
+            annotations=[
+                HandgradingAnnotationConfig(
+                    short_description="Poor choice of variable or function name",
+                    long_description="Names should be descriptive and convey "
+                    "their meaning and purpose. "
+                    "Avoid single-letter names unless their purpose "
+                    "is very clear from context or convention.",
+                )
+            ],
+        ),
     )
 
     write_yaml(AGConfig(project=project), config_file, exclude_defaults=False)
 
     blank_instructor_file = Path(config_file).parent / Path("instructor_file.txt")
-    print(blank_instructor_file)
     if not blank_instructor_file.exists():
         with open(blank_instructor_file, "w") as f:
             f.write(
