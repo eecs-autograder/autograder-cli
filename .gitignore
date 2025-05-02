@@ -113,3 +113,4 @@ venv.bak/
 dist
 local_manual_testing
 tests/roundtrip/**/*.actual.yml
+**/autograder_io_cli_schema.json
