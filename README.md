@@ -206,6 +206,16 @@ Run isort, black, pycodestyle, pydocstyle, and pyright to check for style, forma
 Python code should be formatted using isort and black.
 
 ### Tests
+Build and start the local stack as described above, then run the tests with:
+```
+./dev_scrips/test.sh
+```
+This script does a few preparation steps and then invokes pytest.
+Extra command line arguments to `test.sh` are passed through to pytest, e.g.:
+```
+./dev_scripts/test.sh -k test_project_init
+```
+
 This project uses pytest as its test runner.
 Most of the test cases are currently "roundtrip" tests that save and load a configuration.
 To generate a new roundtrip test, run:
