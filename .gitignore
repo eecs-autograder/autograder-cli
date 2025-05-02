@@ -2,6 +2,7 @@
 .agtoken
 agtoken
 _agtoken
+*.agtoken
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
