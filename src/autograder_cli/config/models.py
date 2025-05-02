@@ -66,6 +66,8 @@ class ProjectConfig(BaseModel):
     test_suites: list[TestSuiteConfig] = []
     mutation_suites: list[MutationSuiteConfig] = []
 
+    handgrading: HandgradingConfig | None = None
+
     @field_validator("settings", mode="before")
     @classmethod
     def allow_empty_settings(cls, value: object, info: ValidationInfo):
@@ -129,6 +131,9 @@ class DeadlineWithNoCutoff(BaseModel):
 
 
 class ProjectSettings(BaseModel):
+    # TODO: Replace with validate_by_name and validate_by_alias when we
+    # update to Pydantic 2.11:
+    # https://docs.pydantic.dev/latest/api/config/#pydantic.config.ConfigDict.populate_by_name
     model_config = ConfigDict(populate_by_name=True)
 
     _timezone: ZoneInfo
@@ -246,6 +251,9 @@ class TestSuiteFeedbackSettings(BaseModel):
 
 
 class TestSuiteConfig(BaseModel):
+    # TODO: Replace with validate_by_name and validate_by_alias when we
+    # update to Pydantic 2.11:
+    # https://docs.pydantic.dev/latest/api/config/#pydantic.config.ConfigDict.populate_by_name
     model_config = ConfigDict(populate_by_name=True)
 
     name: str
@@ -1110,3 +1118,42 @@ BUILTIN_CMD_FDBK_PRESETS = {
         show_whether_timed_out=True,
     ),
 }
+
+
+class HandgradingConfig(BaseModel):
+    # TODO: Replace with validate_by_name and validate_by_alias when we
+    # update to Pydantic 2.11:
+    # https://docs.pydantic.dev/latest/api/config/#pydantic.config.ConfigDict.populate_by_name
+    model_config = ConfigDict(populate_by_name=True)
+
+    points_style: ag_schema.PointsStyle = "start_at_zero_and_add"
+    max_points: int | None = None
+
+    show_only_applied_rubric_to_students: Annotated[
+        bool,
+        Field(
+            alias="hide_unapplied_rubric_items",
+            description="When handgrading grades are published, "
+            "only show students rubric items that were applied "
+            "to their submission.",
+        ),
+    ] = False
+
+    handgraders_can_leave_comments: bool = False
+    handgraders_can_adjust_points: bool = False
+
+    criteria: list[HandgradingCriterionConfig] = []
+    annotations: list[HandgradingAnnotationConfig] = []
+
+
+class HandgradingCriterionConfig(BaseModel):
+    short_description: str = ""
+    long_description: str = ""
+    points: int = 0
+
+
+class HandgradingAnnotationConfig(BaseModel):
+    short_description: str = ""
+    long_description: str = ""
+    deduction: int = 0
+    max_deduction: int | None = None
