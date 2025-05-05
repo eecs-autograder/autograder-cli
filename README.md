@@ -34,14 +34,21 @@ You may want to alias `ag --base_url https://your.url.com` in your shell profile
 ```
 ag write-schema
 ```
-This will create a file called `autograder_io_cli_schema.json` in the directory the above command was run in.
+This will create a file called `autograder_io_cli_schema.json` in the current working directory.
 3. Add the following to your VSCode settings.json:
 ```
     "yaml.schemas": {
-        "/path/to//autograder_io_cli_schema.json": ["agproject.yml", "*.agproject.yml"]
+        "/path/to/autograder_io_cli_schema.json": [
+            "agproject.yml",
+            "*.agproject.yml",
+            "agproject.*.yml"
+        ]
     }
 ```
 This will cause the YAML plugin to recognize `agproject.yml` and `*.agproject.yml` files as using the Autograder.io CLI schema.
+
+NOTE: The plugin flags an empty `settings` key as an error.
+Leaving `settings` blank is allowed and will use the default field values.
 
 Pull requests are welcome that add instructions for setting up autocomplete on other editors.
 
@@ -226,10 +233,10 @@ To generate a new roundtrip test, run:
 The test name can include directories (e.g., ag_test_suite/setup_cmd).
 This will initialize a roundtrip test in tests/roundtrip/{test name}.test.
 Roundtrip tests consist of the following steps:
-1. Save the project found in `{test name}/project.create.yml`.
-2. Load that project and compare the loaded version with `{test name}/project.create.expected.yml`.
-3. Save the project found in `{test name}/project.update.yml`. (this is intended to be the same project that was created in step one, but with some fields changed)
-4. Load that project and compare the loaded version with `{test name}/project.update.expected.yml`.
+1. Save the project found in `{test name}/agproject.create.yml`.
+2. Load that project and compare the loaded version with `{test name}/agproject.create.expected.yml`.
+3. Save the project found in `{test name}/agproject.update.yml`. (this is intended to be the same project that was created in step one, but with some fields changed)
+4. Load that project and compare the loaded version with `{test name}/agproject.update.expected.yml`.
 
 When testing deadline formats (e.g., fixed cutoff, relative cutoff), you can specify which format to load deadlines into in the file `{test name}/deadline_cutoff_preference`.
 

@@ -15,7 +15,7 @@ mkdir -p $test_dir
 
 proj_uuid=$(python -c "import uuid; print(uuid.uuid4().hex)")
 
-cat > $test_dir/project.create.yml <<- EOM
+cat > $test_dir/agproject.create.yml <<- EOM
 project:
   name: Test Project $proj_uuid
   timezone: America/Chicago
@@ -26,8 +26,8 @@ project:
   settings:
 EOM
 
-cp $test_dir/project.create.yml $test_dir/project.update.yml
-cp $test_dir/project.create.yml $test_dir/project.create.expected.yml
-cp $test_dir/project.update.yml $test_dir/project.update.expected.yml
+cp $test_dir/agproject.create.yml $test_dir/agproject.update.yml
+cp $test_dir/agproject.create.yml $test_dir/agproject.create.expected.yml
+cp $test_dir/agproject.update.yml $test_dir/agproject.update.expected.yml
 
 echo "relative" | cat > $test_dir/deadline_cutoff_preference
