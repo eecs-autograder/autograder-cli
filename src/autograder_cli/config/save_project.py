@@ -22,6 +22,7 @@ from .models import (
     FalsePositivesFeedback,
     FindBugsFeedback,
     FnmatchExpectedStudentFile,
+    HandgradingConfig,
     MultiCmdTestCaseConfig,
     MultiCommandConfig,
     MutationCommandFeedbackOptions,
@@ -95,7 +96,7 @@ class _ProjectSaver:
         self._load_sandbox_images()
         self._save_test_suites()
         self._save_mutation_suites()
-        pass
+        self._save_handgrading_config()
 
     def _make_legacy_project_api_dict(self) -> ag_schema.UpdateProject:
         result: ag_schema.UpdateProject = {
@@ -818,3 +819,55 @@ class _ProjectSaver:
                 ag_schema.MutationTestSuiteHintConfig,
             )
             print("  Hint config updated")
+
+    def _save_handgrading_config(self):
+        assert self.project_pk is not None
+
+        print("Checking handgrading config...")
+        handgrading_config = self.config.project.handgrading
+        if handgrading_config is None:
+            print("No handgrading config")
+            return
+
+        handgrading_response = None
+        try:
+            handgrading_response = do_get(
+                self.client,
+                f"/api/projects/{self.project_pk}/handgrading_rubric/",
+                ag_schema.HandgradingRubric,
+            )
+        except HTTPError as e:
+            if e.response.status_code != 404:
+                raise
+
+        if not handgrading_response:
+            print("Creating handgrading...")
+            do_post(
+                self.client,
+                f"/api/projects/{self.project_pk}/handgrading_rubric/",
+                ag_schema.CreateHandgradingRubric(
+                    points_style=handgrading_config.points_style,
+                    max_points=handgrading_config.max_points,
+                    show_only_applied_rubric_to_students=handgrading_config.show_only_applied_rubric_to_students,
+                    handgraders_can_leave_comments=handgrading_config.handgraders_can_leave_comments,
+                    handgraders_can_adjust_points=handgrading_config.handgraders_can_adjust_points,
+                ),
+                ag_schema.HandgradingRubric,
+            )
+        else:
+            print("Updating handgrading...")
+            do_patch(
+                self.client,
+                f"/api/handgrading_rubrics/{handgrading_response['pk']}/",
+                ag_schema.UpdateHandgradingRubric(
+                    points_style=handgrading_config.points_style,
+                    max_points=handgrading_config.max_points,
+                    show_only_applied_rubric_to_students=handgrading_config.show_only_applied_rubric_to_students,
+                    handgraders_can_leave_comments=handgrading_config.handgraders_can_leave_comments,
+                    handgraders_can_adjust_points=handgrading_config.handgraders_can_adjust_points,
+                ),
+                ag_schema.HandgradingRubric,
+            )
+
+        # save criteria
+        # save annotations
