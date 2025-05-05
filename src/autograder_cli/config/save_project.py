@@ -829,9 +829,9 @@ class _ProjectSaver:
             print("No handgrading config")
             return
 
-        handgrading_response = None
+        handgrading_data = None
         try:
-            handgrading_response = do_get(
+            handgrading_data = do_get(
                 self.client,
                 f"/api/projects/{self.project_pk}/handgrading_rubric/",
                 ag_schema.HandgradingRubric,
@@ -840,9 +840,8 @@ class _ProjectSaver:
             if e.response.status_code != 404:
                 raise
 
-        if not handgrading_response:
-            print("Creating handgrading...")
-            handgrading_response = do_post(
+        if not handgrading_data:
+            handgrading_data = do_post(
                 self.client,
                 f"/api/projects/{self.project_pk}/handgrading_rubric/",
                 ag_schema.CreateHandgradingRubric(
@@ -854,11 +853,11 @@ class _ProjectSaver:
                 ),
                 ag_schema.HandgradingRubric,
             )
+            print("Created handgrading")
         else:
-            print("Updating handgrading...")
-            handgrading_response = do_patch(
+            handgrading_data = do_patch(
                 self.client,
-                f"/api/handgrading_rubrics/{handgrading_response['pk']}/",
+                f"/api/handgrading_rubrics/{handgrading_data['pk']}/",
                 ag_schema.UpdateHandgradingRubric(
                     points_style=handgrading_config.points_style,
                     max_points=handgrading_config.max_points,
@@ -868,7 +867,48 @@ class _ProjectSaver:
                 ),
                 ag_schema.HandgradingRubric,
             )
+            print("Updated handgrading")
 
-        # handgrading_pk = handgrading_response["pk"]
-        # save criteria
+        handgrading_pk = handgrading_data["pk"]
+        existing_criteria = {
+            criterion["short_description"]: criterion
+            for criterion in handgrading_data["criteria"]
+        }
+
+        criteria_order: list[int] = []
+        for criterion_config in handgrading_config.criteria:
+            print("* Checking criterion \"", criterion_config.short_description.strip(), '"...')
+            if criterion_config.short_description not in existing_criteria:
+                criterion_data = do_post(
+                    self.client,
+                    f"/api/handgrading_rubrics/{handgrading_pk}/criteria/",
+                    ag_schema.CreateCriterion(
+                        short_description=criterion_config.short_description,
+                        long_description=criterion_config.long_description,
+                        points=criterion_config.points,
+                    ),
+                    ag_schema.Criterion,
+                )
+            else:
+                criterion_data = do_patch(
+                    self.client,
+                    f"/api/criteria/{existing_criteria[criterion_config.short_description]['pk']}/",
+                    ag_schema.UpdateCriterion(
+                        short_description=criterion_config.short_description,
+                        long_description=criterion_config.long_description,
+                        points=criterion_config.points,
+                    ),
+                    ag_schema.Criterion,
+                )
+
+            criteria_order.append(criterion_data["pk"])
+            print("  Updating criteria order")
+            criteria_order_response = self.client.put(
+                f"/api/handgrading_rubrics/{handgrading_pk}/criteria/order/",
+                json=criteria_order,
+            )
+            check_response_status(criteria_order_response)
+
+        # Do we want warnings for when an item in the API data is not in the yml?
+
         # save annotations

@@ -23,6 +23,7 @@ from .models import (
     FindBugsCmd,
     FindBugsFeedback,
     HandgradingConfig,
+    HandgradingCriterionConfig,
     InstructorFileConfig,
     MutantHintOptions,
     MutationCommandFeedbackOptions,
@@ -562,25 +563,31 @@ _bugs_exposed_fdbk_api_to_config: Final[
 
 def _load_handgrading(client: HTTPClient, project_pk: int) -> HandgradingConfig | None:
     try:
-        rubric = do_get(
-                client,
-                f"/api/projects/{project_pk}/handgrading_rubric/",
-                ag_schema.HandgradingRubric,
+        rubric_data = do_get(
+            client,
+            f"/api/projects/{project_pk}/handgrading_rubric/",
+            ag_schema.HandgradingRubric,
         )
     except HTTPError as e:
         if e.response.status_code != 404:
             raise
         return None
 
-    max_points = int(rubric["max_points"]) if rubric["max_points"] is not None else None
-    if max_points != rubric["max_points"]:
-        print("WARNING: Loaded HandgradingRubric max_points value was a float. "
-              "Trucating to an integer.")
+    max_points = int(rubric_data["max_points"]) if rubric_data["max_points"] is not None else None
+    if max_points != rubric_data["max_points"]:
+        print(
+            "WARNING: Loaded HandgradingRubric max_points value was a float. "
+            "Trucating to an integer."
+        )
 
     return HandgradingConfig(
-        points_style=rubric["points_style"],
+        points_style=rubric_data["points_style"],
         max_points=max_points,
-        show_only_applied_rubric_to_students=rubric["show_only_applied_rubric_to_students"],
-        handgraders_can_leave_comments=rubric["handgraders_can_leave_comments"],
-        handgraders_can_adjust_points=rubric["handgraders_can_adjust_points"],
+        show_only_applied_rubric_to_students=rubric_data["show_only_applied_rubric_to_students"],
+        handgraders_can_leave_comments=rubric_data["handgraders_can_leave_comments"],
+        handgraders_can_adjust_points=rubric_data["handgraders_can_adjust_points"],
+        criteria=[
+            HandgradingCriterionConfig.model_validate(criterion_data)
+            for criterion_data in rubric_data["criteria"]
+        ],
     )
