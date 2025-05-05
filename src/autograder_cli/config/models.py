@@ -1126,7 +1126,7 @@ class HandgradingConfig(BaseModel):
     # https://docs.pydantic.dev/latest/api/config/#pydantic.config.ConfigDict.populate_by_name
     model_config = ConfigDict(populate_by_name=True)
 
-    points_style: ag_schema.PointsStyle = "start_at_zero_and_add"
+    points_style: ag_schema.PointsStyle
     max_points: int | None = None
 
     show_only_applied_rubric_to_students: Annotated[

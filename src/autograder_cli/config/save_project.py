@@ -842,7 +842,7 @@ class _ProjectSaver:
 
         if not handgrading_response:
             print("Creating handgrading...")
-            do_post(
+            handgrading_response = do_post(
                 self.client,
                 f"/api/projects/{self.project_pk}/handgrading_rubric/",
                 ag_schema.CreateHandgradingRubric(
@@ -856,7 +856,7 @@ class _ProjectSaver:
             )
         else:
             print("Updating handgrading...")
-            do_patch(
+            handgrading_response = do_patch(
                 self.client,
                 f"/api/handgrading_rubrics/{handgrading_response['pk']}/",
                 ag_schema.UpdateHandgradingRubric(
@@ -869,5 +869,6 @@ class _ProjectSaver:
                 ag_schema.HandgradingRubric,
             )
 
+        # handgrading_pk = handgrading_response["pk"]
         # save criteria
         # save annotations
