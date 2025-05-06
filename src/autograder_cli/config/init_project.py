@@ -77,7 +77,7 @@ def init_project(
             )
         ],
         handgrading=HandgradingConfig(
-            points_style='start_at_zero_and_add',
+            points_style="start_at_zero_and_add",
             criteria=[
                 HandgradingCriterionConfig(
                     short_description="Main function not too long",
