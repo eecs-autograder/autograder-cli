@@ -14,3 +14,6 @@ project:
       - short_description: Item 1
         long_description: Updated description
         points: 7
+      - short_description: Item 2
+        long_description: Hello
+        points: 0
