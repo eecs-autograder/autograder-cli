@@ -1,0 +1,27 @@
+project:
+  name: Test Project 5eea871cc109490c807aa14bb9e1c687
+  timezone: America/Chicago
+  course:
+    name: Test Course
+    semester: Summer
+    year: 2014
+  settings:
+  handgrading:
+    points_style: start_at_max_and_subtract
+    max_points: 10
+    annotations:
+      - name: "Poor choice of variable name"
+        long_description: |
+          This is a long description about the kinds of variable names
+          that are encouraged and discouraged in the style guide.
+        deduction: -1
+        max_deduction: -4
+      - name: "Function too long"
+        long_description: |
+          Some text about splitting up functions into smaller ones.
+        deduction: -3
+      - name: "Disallowed library"
+        long_description: |
+          Uses a disallowed library.
+        deduction: -20
+        max_deduction: -20

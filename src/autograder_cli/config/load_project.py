@@ -22,6 +22,7 @@ from .models import (
     FalsePositivesFeedback,
     FindBugsCmd,
     FindBugsFeedback,
+    HandgradingAnnotationConfig,
     HandgradingConfig,
     HandgradingCriterionConfig,
     InstructorFileConfig,
@@ -589,5 +590,9 @@ def _load_handgrading(client: HTTPClient, project_pk: int) -> HandgradingConfig 
         criteria=[
             HandgradingCriterionConfig.model_validate(criterion_data)
             for criterion_data in rubric_data["criteria"]
+        ],
+        annotations=[
+            HandgradingAnnotationConfig.model_validate(annotation_data)
+            for annotation_data in rubric_data["annotations"]
         ],
     )

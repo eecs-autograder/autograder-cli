@@ -869,15 +869,21 @@ class _ProjectSaver:
             )
             print("Updated handgrading")
 
+        self._save_criteria(handgrading_config, handgrading_data)
+        self._save_annotations(handgrading_config, handgrading_data)
+
+    def _save_criteria(
+        self, handgrading_config: HandgradingConfig, handgrading_data: ag_schema.HandgradingRubric
+    ):
         handgrading_pk = handgrading_data["pk"]
+
         existing_criteria = {
-            criterion["short_description"]: criterion
-            for criterion in handgrading_data["criteria"]
+            criterion["short_description"]: criterion for criterion in handgrading_data["criteria"]
         }
 
         criteria_order: list[int] = []
         for criterion_config in handgrading_config.criteria:
-            print("* Checking criterion \"", criterion_config.short_description.strip(), '"...')
+            print('* Checking criterion "', criterion_config.short_description.strip(), '"...')
             if criterion_config.short_description not in existing_criteria:
                 criterion_data = do_post(
                     self.client,
@@ -909,6 +915,48 @@ class _ProjectSaver:
             )
             check_response_status(criteria_order_response)
 
-        # Do we want warnings for when an item in the API data is not in the yml?
+    def _save_annotations(
+        self, handgrading_config: HandgradingConfig, handgrading_data: ag_schema.HandgradingRubric
+    ):
+        handgrading_pk = handgrading_data["pk"]
 
-        # save annotations
+        existing_annotations = {
+            annotation["short_description"]: annotation
+            for annotation in handgrading_data["annotations"]
+        }
+
+        annotations_order: list[int] = []
+        for annotation_config in handgrading_config.annotations:
+            print('* Checking annotation "', annotation_config.short_description.strip(), '"...')
+            if annotation_config.short_description not in existing_annotations:
+                annotation_data = do_post(
+                    self.client,
+                    f"/api/handgrading_rubrics/{handgrading_pk}/annotations/",
+                    ag_schema.CreateAnnotation(
+                        short_description=annotation_config.short_description,
+                        long_description=annotation_config.long_description,
+                        deduction=annotation_config.deduction,
+                        max_deduction=annotation_config.max_deduction,
+                    ),
+                    ag_schema.Annotation,
+                )
+            else:
+                annotation_data = do_patch(
+                    self.client,
+                    f"/api/annotations/{existing_annotations[annotation_config.short_description]['pk']}/",
+                    ag_schema.UpdateAnnotation(
+                        short_description=annotation_config.short_description,
+                        long_description=annotation_config.long_description,
+                        deduction=annotation_config.deduction,
+                        max_deduction=annotation_config.max_deduction,
+                    ),
+                    ag_schema.Annotation,
+                )
+
+            annotations_order.append(annotation_data["pk"])
+            print("  Updating annotations order")
+            annotations_order_response = self.client.put(
+                f"/api/handgrading_rubrics/{handgrading_pk}/annotations/order/",
+                json=annotations_order,
+            )
+            check_response_status(annotations_order_response)

@@ -64,7 +64,8 @@ def test_roundtrip(roundtrip_test_dir: Path):
     )
 
     subprocess.run(
-        cmd_base.split() + f"project save -f {roundtrip_test_dir / 'agproject.update.yml'}".split(),
+        cmd_base.split()
+        + f"project save -f {roundtrip_test_dir / 'agproject.update.yml'}".split(),
         check=True,
         timeout=30,
     )
