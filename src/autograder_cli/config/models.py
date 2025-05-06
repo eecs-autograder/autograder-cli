@@ -1147,13 +1147,17 @@ class HandgradingConfig(BaseModel):
 
 
 class HandgradingCriterionConfig(BaseModel):
-    short_description: str = ""
+    model_config = ConfigDict(populate_by_name=True)
+
+    short_description: Annotated[str, Field(alias='name')] = ""
     long_description: str = ""
     points: int = 0
 
 
 class HandgradingAnnotationConfig(BaseModel):
-    short_description: str = ""
+    model_config = ConfigDict(populate_by_name=True)
+
+    short_description: Annotated[str, Field(alias='name')] = ""
     long_description: str = ""
     deduction: int = 0
     max_deduction: int | None = None
