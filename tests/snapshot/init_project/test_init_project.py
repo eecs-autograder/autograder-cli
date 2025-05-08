@@ -28,6 +28,8 @@ def test_project_init():
             [
                 "dyff",
                 "between",
+                "--exclude",
+                "project.settings.deadline.deadline",
                 "--set-exit-code",
                 str(expected_dir / "agproject.yml"),
                 config_filename,

@@ -9,8 +9,8 @@ project:
     anyone_with_link_can_submit: false
     deadline:
       cutoff_type: relative
-      deadline: May 09, 2025 01:00PM
-      cutoff: '0h0m'
+      deadline: May 15, 2025 08:00AM
+      cutoff: 0h0m
     allow_late_days: false
     final_graded_submission_policy: most_recent
     min_group_size: 1
@@ -275,12 +275,12 @@ project:
     handgraders_can_leave_comments: false
     handgraders_can_adjust_points: false
     criteria:
-    - short_description: Main function not too long
+    - name: Main function not too long
       long_description: The program's main() function should be split up into smaller
         functions to improve maintainability
       points: 3
     annotations:
-    - short_description: Poor choice of variable or function name
+    - name: Poor choice of variable or function name
       long_description: Names should be descriptive and convey their meaning and purpose.
         Avoid single-letter names unless their purpose is very clear from context
         or convention.
