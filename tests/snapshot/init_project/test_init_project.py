@@ -30,6 +30,7 @@ def test_project_init():
                 "between",
                 "--exclude",
                 "project.settings.deadline.deadline",
+                "project.timezone",
                 "--set-exit-code",
                 str(expected_dir / "agproject.yml"),
                 config_filename,
