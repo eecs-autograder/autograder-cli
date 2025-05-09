@@ -22,6 +22,7 @@ from .models import (
     FalsePositivesFeedback,
     FindBugsFeedback,
     FnmatchExpectedStudentFile,
+    HandgradingConfig,
     MultiCmdTestCaseConfig,
     MultiCommandConfig,
     MutationCommandFeedbackOptions,
@@ -95,7 +96,7 @@ class _ProjectSaver:
         self._load_sandbox_images()
         self._save_test_suites()
         self._save_mutation_suites()
-        pass
+        self._save_handgrading_config()
 
     def _make_legacy_project_api_dict(self) -> ag_schema.UpdateProject:
         result: ag_schema.UpdateProject = {
@@ -818,3 +819,144 @@ class _ProjectSaver:
                 ag_schema.MutationTestSuiteHintConfig,
             )
             print("  Hint config updated")
+
+    def _save_handgrading_config(self):
+        assert self.project_pk is not None
+
+        print("Checking handgrading config...")
+        handgrading_config = self.config.project.handgrading
+        if handgrading_config is None:
+            print("No handgrading config")
+            return
+
+        handgrading_data = None
+        try:
+            handgrading_data = do_get(
+                self.client,
+                f"/api/projects/{self.project_pk}/handgrading_rubric/",
+                ag_schema.HandgradingRubric,
+            )
+        except HTTPError as e:
+            if e.response.status_code != 404:
+                raise
+
+        if not handgrading_data:
+            handgrading_data = do_post(
+                self.client,
+                f"/api/projects/{self.project_pk}/handgrading_rubric/",
+                ag_schema.CreateHandgradingRubric(
+                    points_style=handgrading_config.points_style,
+                    max_points=handgrading_config.max_points,
+                    show_only_applied_rubric_to_students=handgrading_config.show_only_applied_rubric_to_students,
+                    handgraders_can_leave_comments=handgrading_config.handgraders_can_leave_comments,
+                    handgraders_can_adjust_points=handgrading_config.handgraders_can_adjust_points,
+                ),
+                ag_schema.HandgradingRubric,
+            )
+            print("Created handgrading")
+        else:
+            handgrading_data = do_patch(
+                self.client,
+                f"/api/handgrading_rubrics/{handgrading_data['pk']}/",
+                ag_schema.UpdateHandgradingRubric(
+                    points_style=handgrading_config.points_style,
+                    max_points=handgrading_config.max_points,
+                    show_only_applied_rubric_to_students=handgrading_config.show_only_applied_rubric_to_students,
+                    handgraders_can_leave_comments=handgrading_config.handgraders_can_leave_comments,
+                    handgraders_can_adjust_points=handgrading_config.handgraders_can_adjust_points,
+                ),
+                ag_schema.HandgradingRubric,
+            )
+            print("Updated handgrading")
+
+        self._save_criteria(handgrading_config, handgrading_data)
+        self._save_annotations(handgrading_config, handgrading_data)
+
+    def _save_criteria(
+        self, handgrading_config: HandgradingConfig, handgrading_data: ag_schema.HandgradingRubric
+    ):
+        handgrading_pk = handgrading_data["pk"]
+
+        existing_criteria = {
+            criterion["short_description"]: criterion for criterion in handgrading_data["criteria"]
+        }
+
+        criteria_order: list[int] = []
+        for criterion_config in handgrading_config.criteria:
+            print('* Checking criterion "', criterion_config.short_description.strip(), '"...')
+            if criterion_config.short_description not in existing_criteria:
+                criterion_data = do_post(
+                    self.client,
+                    f"/api/handgrading_rubrics/{handgrading_pk}/criteria/",
+                    ag_schema.CreateCriterion(
+                        short_description=criterion_config.short_description,
+                        long_description=criterion_config.long_description,
+                        points=criterion_config.points,
+                    ),
+                    ag_schema.Criterion,
+                )
+            else:
+                criterion_data = do_patch(
+                    self.client,
+                    f"/api/criteria/{existing_criteria[criterion_config.short_description]['pk']}/",
+                    ag_schema.UpdateCriterion(
+                        short_description=criterion_config.short_description,
+                        long_description=criterion_config.long_description,
+                        points=criterion_config.points,
+                    ),
+                    ag_schema.Criterion,
+                )
+
+            criteria_order.append(criterion_data["pk"])
+            print("  Updating criteria order")
+            criteria_order_response = self.client.put(
+                f"/api/handgrading_rubrics/{handgrading_pk}/criteria/order/",
+                json=criteria_order,
+            )
+            check_response_status(criteria_order_response)
+
+    def _save_annotations(
+        self, handgrading_config: HandgradingConfig, handgrading_data: ag_schema.HandgradingRubric
+    ):
+        handgrading_pk = handgrading_data["pk"]
+
+        existing_annotations = {
+            annotation["short_description"]: annotation
+            for annotation in handgrading_data["annotations"]
+        }
+
+        annotations_order: list[int] = []
+        for annotation_config in handgrading_config.annotations:
+            print('* Checking annotation "', annotation_config.short_description.strip(), '"...')
+            if annotation_config.short_description not in existing_annotations:
+                annotation_data = do_post(
+                    self.client,
+                    f"/api/handgrading_rubrics/{handgrading_pk}/annotations/",
+                    ag_schema.CreateAnnotation(
+                        short_description=annotation_config.short_description,
+                        long_description=annotation_config.long_description,
+                        deduction=annotation_config.deduction,
+                        max_deduction=annotation_config.max_deduction,
+                    ),
+                    ag_schema.Annotation,
+                )
+            else:
+                annotation_data = do_patch(
+                    self.client,
+                    f"/api/annotations/{existing_annotations[annotation_config.short_description]['pk']}/",
+                    ag_schema.UpdateAnnotation(
+                        short_description=annotation_config.short_description,
+                        long_description=annotation_config.long_description,
+                        deduction=annotation_config.deduction,
+                        max_deduction=annotation_config.max_deduction,
+                    ),
+                    ag_schema.Annotation,
+                )
+
+            annotations_order.append(annotation_data["pk"])
+            print("  Updating annotations order")
+            annotations_order_response = self.client.put(
+                f"/api/handgrading_rubrics/{handgrading_pk}/annotations/order/",
+                json=annotations_order,
+            )
+            check_response_status(annotations_order_response)
