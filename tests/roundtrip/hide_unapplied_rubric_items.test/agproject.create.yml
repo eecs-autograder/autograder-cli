@@ -1,0 +1,11 @@
+project:
+  name: Test Project 469e63c333a1497a841da4cd70a1c0ae
+  timezone: America/Chicago
+  course:
+    name: Test Course
+    semester: Summer
+    year: 2014
+  settings:
+  handgrading:
+    points_style: start_at_zero_and_add
+    hide_unapplied_rubric_items: true

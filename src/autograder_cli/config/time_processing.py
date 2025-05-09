@@ -110,7 +110,7 @@ def serialize_duration(value: datetime.timedelta) -> str:
     if minutes:
         result += f"{minutes}m"
 
-    return result
+    return result if result else "0h0m"
 
 
 @overload

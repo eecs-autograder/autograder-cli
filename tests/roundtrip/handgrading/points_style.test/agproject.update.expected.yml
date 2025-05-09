@@ -1,0 +1,11 @@
+project:
+  name: Test Project c698d105d5fa406c918d5e99068465ae
+  timezone: America/Chicago
+  course:
+    name: Test Course
+    semester: Summer
+    year: 2014
+  settings: {}
+  handgrading:
+    points_style: start_at_max_and_subtract
+    max_points: 17

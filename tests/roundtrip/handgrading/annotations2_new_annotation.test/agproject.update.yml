@@ -1,0 +1,21 @@
+project:
+  name: Test Project 80d47d8611604f2d85087cca3f2f777f
+  timezone: America/Chicago
+  course:
+    name: Test Course
+    semester: Summer
+    year: 2014
+  settings:
+  handgrading:
+    points_style: start_at_max_and_subtract
+    max_points: 42
+    annotations:
+      - name: "Annotation 2"
+        deduction: -1
+        max_deduction: -4
+      - name: "Annotation 3"
+        deduction: -2
+        max_deduction: -6
+      - name: "Annotation 1"
+        long_description: Some description.
+        deduction: -3

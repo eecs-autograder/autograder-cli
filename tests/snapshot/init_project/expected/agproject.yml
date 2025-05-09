@@ -1,0 +1,391 @@
+project:
+  name: Test Project
+  timezone: America/New_York
+  course:
+    name: Test Course
+    semester: Summer
+    year: 2014
+  settings:
+    anyone_with_link_can_submit: false
+    deadline:
+      cutoff_type: relative
+      deadline: May 15, 2025 08:00AM
+      cutoff: 0h0m
+    allow_late_days: false
+    final_graded_submission_policy: most_recent
+    min_group_size: 1
+    max_group_size: 1
+    submission_limit_per_day: null
+    allow_submissions_past_limit: true
+    groups_combine_daily_submissions: false
+    submission_limit_reset_time: 12:00AM
+    num_bonus_submissions: 0
+    send_email_receipts: false
+    honor_pledge: null
+    total_submission_limit: null
+  student_files:
+  - hello.py
+  - pattern: test_*.py
+    min_num_matches: 1
+    max_num_matches: 3
+  instructor_files:
+  - local_path: instructor_file.txt
+  test_suites:
+  - name: Suite 1
+    sandbox_docker_image: Default
+    instructor_files_needed: []
+    read_only_instructor_files: true
+    student_files_needed: []
+    allow_network_access: false
+    deferred: false
+    setup_cmd: echo "Configure your setup command here. Set to empty string to not
+      use a setup command"
+    setup_label: Setup
+    reject_submission_if_setup_fails: false
+    feedback:
+      normal: public
+      final_graded_submission: public
+      past_limit_submission: public
+      staff_viewer: public
+    test_cases:
+    - name: Test 1
+      type: single_cmd
+      internal_admin_notes: ''
+      staff_description: ''
+      student_description: ''
+      student_on_fail_description: ''
+      cmd: echo "Hello 1!"
+      input:
+        source: none
+        text: ''
+        instructor_file: null
+      return_code:
+        expected: none
+        points: 0
+      stdout:
+        compare_with: none
+        text: ''
+        instructor_file: null
+        points: 0
+      stderr:
+        compare_with: none
+        text: ''
+        instructor_file: null
+        points: 0
+      diff_options:
+        ignore_case: false
+        ignore_whitespace: false
+        ignore_whitespace_changes: false
+        ignore_blank_lines: false
+      feedback:
+        normal: pass/fail
+        first_failed_test: null
+        final_graded_submission: pass/fail
+        past_limit_submission: private
+        staff_viewer: public
+      resources:
+        time_limit: 10
+        virtual_memory_limit: null
+        block_process_spawn: false
+      repeat: []
+    - name: Test 2
+      type: multi_cmd
+      repeat: []
+      internal_admin_notes: ''
+      staff_description: ''
+      student_description: ''
+      feedback:
+        normal:
+          visible: true
+          show_individual_commands: true
+          show_student_description: true
+        final_graded_submission:
+          visible: true
+          show_individual_commands: true
+          show_student_description: true
+        past_limit_submission:
+          visible: true
+          show_individual_commands: true
+          show_student_description: true
+        staff_viewer:
+          visible: true
+          show_individual_commands: true
+          show_student_description: true
+      commands:
+      - name: Test 2
+        cmd: echo "Hello 2!"
+        internal_admin_notes: ''
+        staff_description: ''
+        student_description: ''
+        student_on_fail_description: ''
+        input:
+          source: none
+          text: ''
+          instructor_file: null
+        return_code:
+          expected: none
+          points: 0
+          deduction: 0
+        stdout:
+          compare_with: none
+          text: ''
+          instructor_file: null
+          points: 0
+          deduction: 0
+        stderr:
+          compare_with: none
+          text: ''
+          instructor_file: null
+          points: 0
+          deduction: 0
+        diff_options:
+          ignore_case: false
+          ignore_whitespace: false
+          ignore_whitespace_changes: false
+          ignore_blank_lines: false
+        feedback:
+          normal: pass/fail
+          first_failed_test: null
+          final_graded_submission: pass/fail
+          past_limit_submission: private
+          staff_viewer: public
+        resources:
+          time_limit: 10
+          virtual_memory_limit: null
+          block_process_spawn: false
+        repeat: []
+  mutation_suites:
+  - name: Mutation Suite 1
+    sandbox_docker_image: Default
+    instructor_files_needed: []
+    read_only_instructor_files: true
+    student_files_needed:
+    - test_*.py
+    allow_network_access: false
+    deferred: false
+    bug_names:
+      bug1:
+      - Hint 1
+      - Hint 2
+      bug2:
+      - Hint 1
+    points_per_bug: '3'
+    max_points: null
+    setup: null
+    test_discovery:
+      cmd: echo "Replace this command with one that finds and prints the names of
+        student-written test cases."
+      max_num_student_tests: 20
+      delimiter: any_whitespace
+      feedback:
+        normal:
+          show_return_code: true
+          show_stdout: true
+          show_stderr: true
+        final_graded_submission:
+          show_return_code: true
+          show_stdout: true
+          show_stderr: true
+        past_limit_submission:
+          show_return_code: false
+          show_stdout: false
+          show_stderr: false
+        staff_viewer:
+          show_return_code: true
+          show_stdout: true
+          show_stderr: true
+      resources:
+        time_limit: 10
+        virtual_memory_limit: null
+        block_process_spawn: false
+    false_positives_check:
+      cmd: echo "Replace this with a command that includes the placeholder ${student_test_name}".
+        The command should run that test against a correct implementation and exit
+        nonzero (report a false positive) if the test incorrectly reports a bug in
+        the correct implementation.
+      feedback:
+        normal:
+          show_stdout: false
+          show_stderr: false
+        final_graded_submission:
+          show_stdout: false
+          show_stderr: false
+        past_limit_submission:
+          show_stdout: false
+          show_stderr: false
+        staff_viewer:
+          show_stdout: true
+          show_stderr: true
+      resources:
+        time_limit: 10
+        virtual_memory_limit: null
+        block_process_spawn: false
+    find_bugs:
+      cmd: echo "Replace this with a command that includes the placeholders ${student_test_name}
+        and ${buggy_impl_name}. The command should run that test against that buggy
+        implementation and exit nonzero if the test detects the bug."
+      resources:
+        time_limit: 10
+        virtual_memory_limit: null
+        block_process_spawn: false
+      feedback:
+        normal:
+          show_stdout: false
+          show_stderr: false
+        final_graded_submission:
+          show_stdout: false
+          show_stderr: false
+        past_limit_submission:
+          show_stdout: false
+          show_stderr: false
+        staff_viewer:
+          show_stdout: true
+          show_stderr: true
+    feedback:
+      normal:
+        visible: true
+        show_invalid_test_names: true
+        show_points: true
+        bugs_detected: num_bugs_detected
+      final_graded_submission:
+        visible: true
+        show_invalid_test_names: true
+        show_points: true
+        bugs_detected: num_bugs_detected
+      past_limit_submission:
+        visible: true
+        show_invalid_test_names: false
+        show_points: false
+        bugs_detected: hide
+      staff_viewer:
+        visible: true
+        show_invalid_test_names: true
+        show_points: true
+        bugs_detected: detected_bug_names
+    hint_options:
+      hint_limit_per_day: null
+      daily_limit_reset_time: 12:00AM
+      hint_limit_per_submission: null
+      obfuscate_bug_names: sequential
+      obfuscated_bug_names_prefix: 'Bug '
+  handgrading:
+    points_style: start_at_zero_and_add
+    max_points: null
+    hide_unapplied_rubric_items: false
+    handgraders_can_leave_comments: false
+    handgraders_can_adjust_points: false
+    criteria:
+    - name: Main function not too long
+      long_description: The program's main() function should be split up into smaller
+        functions to improve maintainability
+      points: 3
+    annotations:
+    - name: Poor choice of variable or function name
+      long_description: Names should be descriptive and convey their meaning and purpose.
+        Avoid single-letter names unless their purpose is very clear from context
+        or convention.
+      deduction: 0
+      max_deduction: null
+feedback_presets:
+  pass/fail:
+    visible: true
+    show_student_description: true
+    return_code_fdbk_level: correct_or_incorrect
+    stdout_fdbk_level: correct_or_incorrect
+    stderr_fdbk_level: correct_or_incorrect
+    show_points: true
+    show_actual_return_code: false
+    show_actual_stdout: false
+    show_actual_stderr: false
+    show_whether_timed_out: false
+  pass/fail+timeout:
+    visible: true
+    show_student_description: true
+    return_code_fdbk_level: correct_or_incorrect
+    stdout_fdbk_level: correct_or_incorrect
+    stderr_fdbk_level: correct_or_incorrect
+    show_points: true
+    show_actual_return_code: false
+    show_actual_stdout: false
+    show_actual_stderr: false
+    show_whether_timed_out: true
+  pass/fail+exit_status:
+    visible: true
+    show_student_description: true
+    return_code_fdbk_level: correct_or_incorrect
+    stdout_fdbk_level: correct_or_incorrect
+    stderr_fdbk_level: correct_or_incorrect
+    show_points: true
+    show_actual_return_code: true
+    show_actual_stdout: false
+    show_actual_stderr: false
+    show_whether_timed_out: true
+  pass/fail+output:
+    visible: true
+    show_student_description: true
+    return_code_fdbk_level: correct_or_incorrect
+    stdout_fdbk_level: correct_or_incorrect
+    stderr_fdbk_level: correct_or_incorrect
+    show_points: true
+    show_actual_return_code: false
+    show_actual_stdout: true
+    show_actual_stderr: true
+    show_whether_timed_out: false
+  pass/fail+diff:
+    visible: true
+    show_student_description: true
+    return_code_fdbk_level: correct_or_incorrect
+    stdout_fdbk_level: expected_and_actual
+    stderr_fdbk_level: expected_and_actual
+    show_points: true
+    show_actual_return_code: false
+    show_actual_stdout: false
+    show_actual_stderr: false
+    show_whether_timed_out: false
+  private:
+    visible: true
+    show_student_description: false
+    return_code_fdbk_level: no_feedback
+    stdout_fdbk_level: no_feedback
+    stderr_fdbk_level: no_feedback
+    show_points: false
+    show_actual_return_code: false
+    show_actual_stdout: false
+    show_actual_stderr: false
+    show_whether_timed_out: false
+  public:
+    visible: true
+    show_student_description: true
+    return_code_fdbk_level: expected_and_actual
+    stdout_fdbk_level: expected_and_actual
+    stderr_fdbk_level: expected_and_actual
+    show_points: true
+    show_actual_return_code: true
+    show_actual_stdout: true
+    show_actual_stderr: true
+    show_whether_timed_out: true
+feedback_presets_test_suite_setup:
+  public:
+    visible: true
+    show_individual_tests: true
+    show_student_description: true
+    show_setup_return_code: true
+    show_setup_timed_out: true
+    show_setup_stdout: true
+    show_setup_stderr: true
+  pass/fail:
+    visible: true
+    show_individual_tests: true
+    show_student_description: true
+    show_setup_return_code: true
+    show_setup_timed_out: true
+    show_setup_stdout: false
+    show_setup_stderr: false
+  private:
+    visible: true
+    show_individual_tests: true
+    show_student_description: false
+    show_setup_return_code: false
+    show_setup_timed_out: false
+    show_setup_stdout: false
+    show_setup_stderr: false

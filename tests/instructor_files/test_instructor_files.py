@@ -11,7 +11,7 @@ def test_instructor_files():
 
     for stage in ["create", "update"]:
         dirname = _INSTRUCTOR_FILE_TESTS_DIR / stage
-        config_filename = dirname / "initial" / "project.yml"
+        config_filename = dirname / "initial" / "agproject.yml"
         subprocess.run(
             cmd_base.split() + f"project save -f {config_filename}".split(),
             check=True,
@@ -36,7 +36,7 @@ def test_instructor_files():
                 course_semester,
                 course_year,
                 project_name,
-                dirname / "actual" / "project.yml",
+                dirname / "actual" / "agproject.yml",
             ],
             check=True,
             timeout=30,
@@ -46,15 +46,15 @@ def test_instructor_files():
             [
                 "diff",
                 "-r",
-                dirname / "expected" / "project.yml",
-                dirname / "actual" / "project.yml",
+                dirname / "expected" / "agproject.yml",
+                dirname / "actual" / "agproject.yml",
             ],
             check=True,
         )
 
     # Check for a warning message when files are removed from the yaml
     # file (including globs) but still exist on the autograder
-    config_filename = _INSTRUCTOR_FILE_TESTS_DIR / "remove_from_yml_only" / "project.yml"
+    config_filename = _INSTRUCTOR_FILE_TESTS_DIR / "remove_from_yml_only" / "agproject.yml"
     result = subprocess.run(
         cmd_base.split() + f"project save -f {config_filename}".split(),
         check=True,
