@@ -87,6 +87,10 @@ jobs:
       run: python3 -m pip install build --user
 
     - name: Build a binary wheel and a source tarball
+      # Use a fake version number for non-tagged runs.
+      # Tagged runs are for actual releases.
+      env:
+        SETUPTOOLS_SCM_PRETEND_VERSION: ${{ !startsWith(github.ref, 'refs/tags/') && format('0.1.dev{0}', github.run_number) || '' }}
       run: python3 -m build
 
     - name: Store the distribution packages
