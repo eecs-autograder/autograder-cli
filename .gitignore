@@ -2,6 +2,7 @@
 .agtoken
 agtoken
 _agtoken
+*.agtoken
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
@@ -112,3 +113,4 @@ venv.bak/
 dist
 local_manual_testing
 tests/roundtrip/**/*.actual.yml
+**/autograder_io_cli_schema.json

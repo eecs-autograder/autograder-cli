@@ -22,6 +22,9 @@ from .models import (
     FalsePositivesFeedback,
     FindBugsCmd,
     FindBugsFeedback,
+    HandgradingAnnotationConfig,
+    HandgradingConfig,
+    HandgradingCriterionConfig,
     InstructorFileConfig,
     MutantHintOptions,
     MutationCommandFeedbackOptions,
@@ -112,6 +115,9 @@ def load_project(
     print("Loading mutation suites...")
     mutation_suites = _load_mutation_suites(client, project_data["pk"])
 
+    print("Loading handgrading...")
+    handgrading = _load_handgrading(client, project_data["pk"])
+
     write_yaml(
         AGConfig(
             project=ProjectConfig(
@@ -127,6 +133,7 @@ def load_project(
                 instructor_files=instructor_file_data,
                 test_suites=test_suites,
                 mutation_suites=mutation_suites,
+                handgrading=handgrading,
             )
         ),
         output_file,
@@ -553,3 +560,39 @@ _bugs_exposed_fdbk_api_to_config: Final[
     "exposed_bug_names": "detected_bug_names",
     "all_bug_names": "all_bug_names",
 }
+
+
+def _load_handgrading(client: HTTPClient, project_pk: int) -> HandgradingConfig | None:
+    try:
+        rubric_data = do_get(
+            client,
+            f"/api/projects/{project_pk}/handgrading_rubric/",
+            ag_schema.HandgradingRubric,
+        )
+    except HTTPError as e:
+        if e.response.status_code != 404:
+            raise
+        return None
+
+    max_points = int(rubric_data["max_points"]) if rubric_data["max_points"] is not None else None
+    if max_points != rubric_data["max_points"]:
+        print(
+            "WARNING: Loaded HandgradingRubric max_points value was a float. "
+            "Trucating to an integer."
+        )
+
+    return HandgradingConfig(
+        points_style=rubric_data["points_style"],
+        max_points=max_points,
+        show_only_applied_rubric_to_students=rubric_data["show_only_applied_rubric_to_students"],
+        handgraders_can_leave_comments=rubric_data["handgraders_can_leave_comments"],
+        handgraders_can_adjust_points=rubric_data["handgraders_can_adjust_points"],
+        criteria=[
+            HandgradingCriterionConfig.model_validate(criterion_data)
+            for criterion_data in rubric_data["criteria"]
+        ],
+        annotations=[
+            HandgradingAnnotationConfig.model_validate(annotation_data)
+            for annotation_data in rubric_data["annotations"]
+        ],
+    )

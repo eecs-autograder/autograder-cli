@@ -22,7 +22,7 @@ def test_roundtrip(roundtrip_test_dir: Path):
     else:
         deadline_cutoff_preference = []
 
-    create_filename = roundtrip_test_dir / "project.create.yml"
+    create_filename = roundtrip_test_dir / "agproject.create.yml"
     subprocess.run(
         cmd_base.split() + f"project save -f {create_filename}".split(),
         check=True,
@@ -45,7 +45,7 @@ def test_roundtrip(roundtrip_test_dir: Path):
             course_semester,
             course_year,
             project_name,
-            roundtrip_test_dir / "project.create.actual.yml",
+            roundtrip_test_dir / "agproject.create.actual.yml",
         ]
         + deadline_cutoff_preference,
         check=True,
@@ -57,14 +57,15 @@ def test_roundtrip(roundtrip_test_dir: Path):
             "dyff",
             "between",
             "--set-exit-code",
-            roundtrip_test_dir / "project.create.expected.yml",
-            roundtrip_test_dir / "project.create.actual.yml",
+            roundtrip_test_dir / "agproject.create.expected.yml",
+            roundtrip_test_dir / "agproject.create.actual.yml",
         ],
         check=True,
     )
 
     subprocess.run(
-        cmd_base.split() + f"project save -f {roundtrip_test_dir / 'project.update.yml'}".split(),
+        cmd_base.split()
+        + f"project save -f {roundtrip_test_dir / 'agproject.update.yml'}".split(),
         check=True,
         timeout=30,
     )
@@ -78,7 +79,7 @@ def test_roundtrip(roundtrip_test_dir: Path):
             course_semester,
             course_year,
             project_name,
-            roundtrip_test_dir / "project.update.actual.yml",
+            roundtrip_test_dir / "agproject.update.actual.yml",
         ]
         + deadline_cutoff_preference,
         check=True,
@@ -90,8 +91,8 @@ def test_roundtrip(roundtrip_test_dir: Path):
             "dyff",
             "between",
             "--set-exit-code",
-            roundtrip_test_dir / "project.update.expected.yml",
-            roundtrip_test_dir / "project.update.actual.yml",
+            roundtrip_test_dir / "agproject.update.expected.yml",
+            roundtrip_test_dir / "agproject.update.actual.yml",
         ],
         check=True,
     )

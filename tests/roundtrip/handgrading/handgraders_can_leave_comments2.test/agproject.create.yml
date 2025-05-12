@@ -1,0 +1,11 @@
+project:
+  name: Test Project 4710b8a6add3497a989716969e6287a9
+  timezone: America/Chicago
+  course:
+    name: Test Course
+    semester: Summer
+    year: 2014
+  settings:
+  handgrading:
+    points_style: start_at_zero_and_add
+    handgraders_can_leave_comments: false

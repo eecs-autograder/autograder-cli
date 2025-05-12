@@ -34,14 +34,21 @@ You may want to alias `ag --base_url https://your.url.com` in your shell profile
 ```
 ag write-schema
 ```
-This will create a file called `autograder_io_cli_schema.json` in the directory the above command was run in.
+This will create a file called `autograder_io_cli_schema.json` in the current working directory.
 3. Add the following to your VSCode settings.json:
 ```
     "yaml.schemas": {
-        "/path/to//autograder_io_cli_schema.json": ["agproject.yml", "*.agproject.yml"]
+        "/path/to/autograder_io_cli_schema.json": [
+            "agproject.yml",
+            "*.agproject.yml",
+            "agproject.*.yml"
+        ]
     }
 ```
 This will cause the YAML plugin to recognize `agproject.yml` and `*.agproject.yml` files as using the Autograder.io CLI schema.
+
+NOTE: The plugin flags an empty `settings` key as an error.
+Leaving `settings` blank is allowed and will use the default field values.
 
 Pull requests are welcome that add instructions for setting up autocomplete on other editors.
 
@@ -64,8 +71,9 @@ You can change the `timezone` field in the config file if you wish to use a diff
 
 See [Save a Project](Save-a-Project) to save your configured project
 
-#### Download an Existing Project
-This command creates a config file for an existing project and downloads instructor files associated with that project.
+#### Download (Load) an Existing Project
+This command loads settings for an existing project and writes the settings to a file.
+It also downloads instructor files associated with that project.
 For example:
 ```
 ag project load 'My Course' Fall 2025 'My Project' myproject.agproject.yml
@@ -143,6 +151,14 @@ In test suite definitions in the config file, you may specify the name of any sa
 The CLI currently does NOT support deleting entries such as instructor files, expected student files, or test cases.
 Removing these entries from the config file and saving the project will NOT delete those entries.
 If you need to delete those entires, please do so through the Autograder.io website.
+
+### Renaming Entries
+The CLI does not yet support renaming entries.
+Changing the name of an entry will cause a new entry to be created.
+Please rename entries through the Autograder.io website.
+We are currently considering solutions for renaming.
+Our goal is to balance ease-of-use, predictability, and complexity of the implementation.
+Please let us know if you have suggestions by commenting on [this issue](https://github.com/eecs-autograder/autograder-cli/issues/6).
 
 ## Versioning
 This package uses calendar versioning following [Python conventions](https://packaging.python.org/en/latest/discussions/versioning/), with version numbers of the form `yy.mm.X`, where `X` is for minor versions.
@@ -255,6 +271,16 @@ Run isort, black, pycodestyle, pydocstyle, and pyright to check for style, forma
 Python code should be formatted using isort and black.
 
 ### Tests
+Build and start the local stack as described above, then run the tests with:
+```
+./dev_scrips/test.sh
+```
+This script does a few preparation steps and then invokes pytest.
+Extra command line arguments to `test.sh` are passed through to pytest, e.g.:
+```
+./dev_scripts/test.sh -k test_project_init
+```
+
 This project uses pytest as its test runner.
 Most of the test cases are currently "roundtrip" tests that save and load a configuration.
 To generate a new roundtrip test, run:
@@ -265,10 +291,10 @@ To generate a new roundtrip test, run:
 The test name can include directories (e.g., ag_test_suite/setup_cmd).
 This will initialize a roundtrip test in tests/roundtrip/{test name}.test.
 Roundtrip tests consist of the following steps:
-1. Save the project found in `{test name}/project.create.yml`.
-2. Load that project and compare the loaded version with `{test name}/project.create.expected.yml`.
-3. Save the project found in `{test name}/project.update.yml`. (this is intended to be the same project that was created in step one, but with some fields changed)
-4. Load that project and compare the loaded version with `{test name}/project.update.expected.yml`.
+1. Save the project found in `{test name}/agproject.create.yml`.
+2. Load that project and compare the loaded version with `{test name}/agproject.create.expected.yml`.
+3. Save the project found in `{test name}/agproject.update.yml`. (this is intended to be the same project that was created in step one, but with some fields changed)
+4. Load that project and compare the loaded version with `{test name}/agproject.update.expected.yml`.
 
 When testing deadline formats (e.g., fixed cutoff, relative cutoff), you can specify which format to load deadlines into in the file `{test name}/deadline_cutoff_preference`.
 

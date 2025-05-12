@@ -1,0 +1,19 @@
+project:
+  name: Test Project b4dd5230d58d483c86443b82d9a8dafd
+  timezone: America/Chicago
+  course:
+    name: Test Course
+    semester: Summer
+    year: 2014
+  settings: {}
+  handgrading:
+    points_style: start_at_zero_and_add
+    criteria:
+      - name: "Uses a map at least once"
+        long_description: |
+          The implementation uses a map at least once UPDATED
+          for O(log n) lookups.
+        points: 5
+      - name: Uses a set at least once
+        long_description: "Uses a set at least once to meet the complexity requirements."
+        points: 9
