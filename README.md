@@ -212,9 +212,7 @@ git checkout release-2024.08.x
 git tag 2024.8.0
 git push --tags
 ```
-CI will build and test the package and create a GitHub release.
-
-The next time we publish a release, we will and updated instructions for the final package publishing step.
+CI will build and test the package, publish to pypi, and create a GitHub release.
 
 ## Dev Setup
 ### Clone the Repository
