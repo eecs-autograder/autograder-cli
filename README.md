@@ -192,7 +192,8 @@ The month format differs from the Python package versioning (e.g., `2024.8.x`) s
 
 Do NOT merge or rebase directly between the develop and release branches.
 Once a release branch is created, it should only be updated with feature- or bugfix-style branches.
-After a feature/bugfix branch is merged into a release branch, rebase the feature/bugfix branch on top of `develop` and open a pull request to merge the rebased branch into `develop`.
+We generally recommend a squash-and-merge for these types of PRs.
+After the squashed feature/bugfix branch is merged into a release branch, cherry-pick the squashed commit on top of `develop` and open a pull request to merge the changes into `develop`.
 
 Release branches should keep the corresponding `autograder-server` submodule release branch up to date.
 Follow the same protocol as for the `develop` branch.
