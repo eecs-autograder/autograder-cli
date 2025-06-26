@@ -161,18 +161,65 @@ Our goal is to balance ease-of-use, predictability, and complexity of the implem
 Please let us know if you have suggestions by commenting on [this issue](https://github.com/eecs-autograder/autograder-cli/issues/6).
 
 ## Versioning
-This package uses calendar versioning following [Python conventions](https://packaging.python.org/en/latest/discussions/versioning/), with version numbers of the form `yy.mm.X`, where `X` is for minor versions.
-For example: `24.8.0` corresponds to August 2024.
+This package uses calendar versioning following [Python conventions](https://packaging.python.org/en/latest/discussions/versioning/), with version numbers of the form `yyyy.mm.X`, where `X` is for minor versions.
+For example: `2024.8.0` corresponds to August 2024.
 We also make use of pre-release tags such as `.devX`.
 
 The year and month of the release specify the earliest version of the Autograder.io API this package is compatible with.
 However, the minor version number **does not correspond** to Autograder.io's minor version numbers.
 Also note that backwards-incompatible changes to the Autograder.io API may make future versions of that API incompatible with earlier versions of the CLI.
 
+### Development & Release Branches: Protocols and Workflow
+This section is intended for developers.
+
+#### "develop" branch
+Use feature branches for all changes, and make a pull request against the `develop` branch.
+The `develop` branch is for changes based on the `develop` branch of the `autograder-server` repo (which is a submodule of this repo found at `tests/local_stack/autograder-server`).
+Update the submodule `develop` branch when starting work on a feature that depends on new `autograder-server` commits.
+Use the following steps on your feature branch:
+```
+# Fetch latest submodule commits
+git submodule update --remote
+# git status should show new commits in the submodule
+git status
+git add tests/local_stack/autograder-server
+git commit -m "Update submodule"
+```
+
+#### "release-*" branches
+Name release branches as `release-YYYY.MM.x`, replacing YYYY with the full year and MM with the zero padded month (e.g., `release-2024.08.x`).
+The month format differs from the Python package versioning (e.g., `2024.8.x`) so that branches are sorted properly.
+
+Do NOT merge or rebase directly between the develop and release branches.
+Once a release branch is created, it should only be updated with feature- or bugfix-style branches.
+We generally recommend a squash-and-merge for these types of PRs.
+After the squashed feature/bugfix branch is merged into a release branch, cherry-pick the squashed commit on top of `develop` and open a pull request to merge the changes into `develop`.
+
+Release branches should keep the corresponding `autograder-server` submodule release branch up to date.
+Follow the same protocol as for the `develop` branch.
+
+For the first release of this library (2024.8), there will be a time period of adding features to the release branch until we support all project configuration options.
+At time of writing, handgrading options are the main missing piece.
+
+The version of `README.md` (this file) on the `develop` branch is the source of truth.
+Update this file on release branches just before publishing a release.
+If instructions differ across releases, include both, and label which version the instructions apply to.
+
+#### Publishing a release
+To create a github release, tag the latest commit on the release branch.
+For example, to create the first non-dev 2024.8 release, we'd run:
+```
+git checkout release-2024.08.x
+git tag 2024.8.0
+git push --tags
+```
+CI will build and test the package, publish to pypi, and create a GitHub release.
+
 ## Dev Setup
 ### Clone the Repository
 ```
 git clone --recursive git@github.com:eecs-autograder/autograder-cli.git
+cd autograder-cli
 ```
 
 If you omitted the `--recursive` flag, initialize the submodule with:
@@ -210,6 +257,7 @@ Generate the gpg secrets for the autograder-server stack:
 ```
 python -m pip install Django==3.1 python-gnupg
 cd tests/local_stack/autograder-server && python3 generate_secrets.py
+cd -
 ```
 
 [Running the tests](Tests) will finish preparing the stack by applying migrations and clearing the database.
