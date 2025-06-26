@@ -161,8 +161,8 @@ Our goal is to balance ease-of-use, predictability, and complexity of the implem
 Please let us know if you have suggestions by commenting on [this issue](https://github.com/eecs-autograder/autograder-cli/issues/6).
 
 ## Versioning
-This package uses calendar versioning following [Python conventions](https://packaging.python.org/en/latest/discussions/versioning/), with version numbers of the form `yy.mm.X`, where `X` is for minor versions.
-For example: `24.8.0` corresponds to August 2024.
+This package uses calendar versioning following [Python conventions](https://packaging.python.org/en/latest/discussions/versioning/), with version numbers of the form `yyyy.mm.X`, where `X` is for minor versions.
+For example: `2024.8.0` corresponds to August 2024.
 We also make use of pre-release tags such as `.devX`.
 
 The year and month of the release specify the earliest version of the Autograder.io API this package is compatible with.
