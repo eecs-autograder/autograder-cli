@@ -175,7 +175,7 @@ This section is intended for developers.
 #### "develop" branch
 Use feature branches for all changes, and make a pull request against the `develop` branch.
 The `develop` branch is for changes based on the `develop` branch of the `autograder-server` repo (which is a submodule of this repo found at `tests/local_stack/autograder-server`).
-Update the submodule `develop` branch when starting work on a feature that depends on new `autograder-server` commits. 
+Update the submodule `develop` branch when starting work on a feature that depends on new `autograder-server` commits.
 Use the following steps on your feature branch:
 ```
 # Fetch latest submodule commits
@@ -194,7 +194,7 @@ Do NOT merge or rebase directly between the develop and release branches.
 Once a release branch is created, it should only be updated with feature- or bugfix-style branches.
 After a feature/bugfix branch is merged into a release branch, rebase the feature/bugfix branch on top of `develop` and open a pull request to merge the rebased branch into `develop`.
 
-Release branches should keep the corresponding `autograder-server` submodule release branch up to date. 
+Release branches should keep the corresponding `autograder-server` submodule release branch up to date.
 Follow the same protocol as for the `develop` branch.
 
 For the first release of this library (2024.8), there will be a time period of adding features to the release branch until we support all project configuration options.
@@ -212,9 +212,7 @@ git checkout release-2024.08.x
 git tag 2024.8.0
 git push --tags
 ```
-CI will build and test the package and create a GitHub release.
-
-The next time we publish a release, we will and updated instructions for the final package publishing step.
+CI will build and test the package, publish to pypi, and create a GitHub release.
 
 ## Dev Setup
 ### Clone the Repository
