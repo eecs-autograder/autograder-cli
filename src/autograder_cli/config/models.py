@@ -922,7 +922,7 @@ class FindBugsFeedback(BaseModel):
 class FindBugsCmd(BaseModel):
     cmd: str = (
         'echo "Replace this with a command that includes '
-        "the placeholders ${student_test_name} and ${buggy_impl_name}. "
+        'the placeholders ${student_test_name} and ${buggy_impl_name}. '
         "The command should run that test against that buggy implementation "
         'and exit nonzero if the test detects the bug."'
     )
