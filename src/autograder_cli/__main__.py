@@ -151,7 +151,7 @@ def write_json_schema(filename: str, *args: object, **kwargs: object):
     with open(filename, "w") as f:
         json.dump(AGConfig.model_json_schema(), f, indent=2)
 
-    print('If using VSCode, add the following to your workspace settings:')
+    print("If using VSCode, add the following to your workspace settings:")
     print(f"""
     "yaml.schemas": {{
         "{Path(filename).absolute()}": [
