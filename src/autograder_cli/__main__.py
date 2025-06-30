@@ -5,6 +5,7 @@ and http client usage.
 
 import argparse
 import json
+from pathlib import Path
 from typing import get_args
 
 from requests import HTTPError
@@ -149,6 +150,17 @@ def _http_parse_args(http_parser: argparse.ArgumentParser):
 def write_json_schema(filename: str, *args: object, **kwargs: object):
     with open(filename, "w") as f:
         json.dump(AGConfig.model_json_schema(), f, indent=2)
+
+    print('If using VSCode, add the following to your workspace settings:')
+    print(f"""
+    "yaml.schemas": {{
+        "{Path(filename).absolute()}": [
+            "**/agproject.yml",
+            "**/*.agproject.yml",
+            "agproject.*.yml"
+        ]
+    }}
+""")
 
 
 if __name__ == "__main__":
