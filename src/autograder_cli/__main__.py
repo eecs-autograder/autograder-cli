@@ -5,6 +5,7 @@ and http client usage.
 
 import argparse
 import json
+import sys
 from pathlib import Path
 from typing import get_args
 
@@ -104,6 +105,11 @@ def http_main(
         elif action == "get_pages":
             response = list(client.get_paginated(url))
             print(json.dumps(response, indent=4))
+        elif action == "get_file":
+            response = client.get(url, stream=True)
+            check_response_status(response)
+            for chunk in response.iter_content():
+                sys.stdout.buffer.write(chunk)
         elif action == "post":
             response = client.post(url, json=body)
             check_response_status(response)
@@ -126,7 +132,9 @@ def http_main(
 
 
 def _http_parse_args(http_parser: argparse.ArgumentParser):
-    http_parser.add_argument("action", choices=("get", "get_pages", "post", "put", "patch"))
+    http_parser.add_argument(
+        "action", choices=("get", "get_pages", "get_file", "post", "put", "patch")
+    )
     http_parser.add_argument("url", type=str)
 
     http_parser.add_argument(
