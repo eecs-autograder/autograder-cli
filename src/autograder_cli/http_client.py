@@ -116,12 +116,10 @@ class HTTPClient:
 
 def check_response_status(response: requests.Response):
     if not response.ok:
-        if 500 <= response.status_code < 600:
-            print(f"{response.status_code}: {response.reason}")
-        else:
-            try:
-                print(response.json())
-            except ValueError:
-                print(response.text)
+        print(f"{response.status_code}: {response.reason}")
+        try:
+            print(response.json())
+        except ValueError:
+            print(response.text)
 
-        response.raise_for_status()
+    response.raise_for_status()
