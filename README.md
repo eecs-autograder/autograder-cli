@@ -3,12 +3,19 @@ A command-line tool for managing assignments on Autograder.io.
 
 We also recommend Amir Kamil's [autograder-tools](https://gitlab.eecs.umich.edu/akamil/autograder-tools/tree/master) as a complimentary collection of applications.
 
+## Announcements
+Version `2024.08.0` is out!
+All project configuration options (e.g., core settings, files, tests, handgrading) should be supported in this version.
+Please open an issue to let us know if you spot something we missed.
+
 ## Quickstart
 ### Install
-While this tool is usable in its current state, things may change between now and our first official release.
-To install the latest development release, pass the `--pre` flag to pip as below:
+Replace `<version>` with `YYYY.MM.*` of your deployment's version of Autograder.io.
+You can check your deployment's version by viewing the API docs at `yourdeploymentdomain/api/docs`.
+For example, if your deployment is on version `2024.08.0`, replace `<version>` with `2024.08.*`.
+This will install the most recent version of the CLI compatible with Autograder.io `2024.08.0`.
 ```
-pip install --pre autograder-cli
+pip install --pre autograder-cli==<version>
 ```
 
 ### Obtain API Token
