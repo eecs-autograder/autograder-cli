@@ -2,6 +2,7 @@ import warnings
 from decimal import Decimal
 from pathlib import Path
 from typing import Final, Literal
+from zoneinfo import ZoneInfo
 
 from pydantic import TypeAdapter
 from requests import HTTPError
@@ -86,7 +87,7 @@ def load_project(
     settings = ProjectSettings(
         _timezone=timezone,
         guests_can_submit=project_data["guests_can_submit"],
-        deadline=_process_deadline(project_data, deadline_cutoff_preference),
+        deadline=_process_deadline(project_data, deadline_cutoff_preference, timezone),
         allow_late_days=project_data["allow_late_days"],
         ultimate_submission_policy=project_data["ultimate_submission_policy"],
         min_group_size=project_data["min_group_size"],
@@ -145,34 +146,36 @@ def load_project(
 def _process_deadline(
     project_data: ag_schema.Project,
     deadline_cutoff_preference: Literal["relative", "fixed"],
+    timezone: ZoneInfo,
 ) -> DeadlineWithRelativeCutoff | DeadlineWithFixedCutoff | DeadlineWithNoCutoff | None:
-    soft_deadline = project_data["soft_closing_time"]
-    hard_deadline = project_data.get("closing_time", None)
+    soft_deadline = validate_datetime(project_data["soft_closing_time"])
+    if soft_deadline is not None:
+        soft_deadline = soft_deadline.astimezone(timezone)
+
+    hard_deadline = validate_datetime(project_data.get("closing_time", None))
+    if hard_deadline is not None:
+        hard_deadline = hard_deadline.astimezone(timezone)
 
     if soft_deadline is not None and hard_deadline is not None:
         if deadline_cutoff_preference == "relative":
-            parsed_soft = validate_datetime(soft_deadline)
-            parsed_hard = validate_datetime(hard_deadline)
             return DeadlineWithRelativeCutoff(
                 cutoff_type="relative",
-                deadline=parsed_soft,
-                cutoff=parsed_hard - parsed_soft,
+                deadline=soft_deadline,
+                cutoff=hard_deadline - soft_deadline,
             )
         else:
             return DeadlineWithFixedCutoff(
                 cutoff_type="fixed",
-                deadline=validate_datetime(soft_deadline),
-                cutoff=validate_datetime(hard_deadline),
+                deadline=soft_deadline,
+                cutoff=hard_deadline,
             )
 
     if soft_deadline is not None and hard_deadline is None:
-        return DeadlineWithNoCutoff(cutoff_type="none", deadline=validate_datetime(soft_deadline))
+        return DeadlineWithNoCutoff(cutoff_type="none", deadline=soft_deadline)
 
     if soft_deadline is None and hard_deadline is not None:
         # Default cutoff for relative is 0
-        return DeadlineWithRelativeCutoff(
-            cutoff_type="relative", deadline=validate_datetime(hard_deadline)
-        )
+        return DeadlineWithRelativeCutoff(cutoff_type="relative", deadline=hard_deadline)
 
     if soft_deadline is None and hard_deadline is None:
         return None

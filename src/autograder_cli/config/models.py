@@ -5,7 +5,7 @@ import itertools
 from collections.abc import Mapping, Sequence
 from decimal import Decimal
 from pathlib import Path
-from typing import Annotated, Any, Final, Literal, TypeAlias, cast
+from typing import Annotated, Any, Final, Literal, Self, TypeAlias, cast
 from zoneinfo import ZoneInfo
 
 from pydantic import (
@@ -75,6 +75,30 @@ class ProjectConfig(BaseModel):
             return ProjectSettings(_timezone=info.data["timezone"])
 
         return value
+
+    @model_validator(mode="after")
+    def set_timezones(self, info: ValidationInfo) -> Self:
+        if not isinstance(info.context, dict):
+            return self
+
+        if not info.context.get("read_yaml"):  # type: ignore
+            return self
+
+        if self.settings.deadline is None:
+            return self
+
+        self.settings.deadline.deadline = self.settings.deadline.deadline.replace(
+            tzinfo=self.timezone
+        )
+        match (self.settings.deadline.cutoff_type):
+            case "fixed":
+                self.settings.deadline.cutoff = self.settings.deadline.cutoff.replace(
+                    tzinfo=self.timezone
+                )
+            case "relative" | "none":
+                pass
+
+        return self
 
 
 class CourseSelection(BaseModel):
