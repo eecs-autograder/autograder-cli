@@ -7,6 +7,8 @@ from urllib.parse import quote, urljoin
 from urllib.request import urlopen
 from zoneinfo import ZoneInfo
 
+from dateutil.parser import parse as parse_datetime
+
 BASE_URL = "http://localhost:9002/"
 
 
@@ -23,7 +25,7 @@ def main():
     expected = datetime.datetime(
         year=2024, month=1, day=8, hour=19, minute=59, tzinfo=ZoneInfo("America/Chicago")
     )
-    actual = datetime.datetime.fromisoformat(project["soft_closing_time"])
+    actual = parse_datetime(project["soft_closing_time"])
     print(actual)
     assert expected.astimezone(ZoneInfo("UTC")) == actual.astimezone(
         ZoneInfo("UTC")
@@ -32,7 +34,7 @@ def main():
     expected = datetime.datetime(
         year=2024, month=1, day=8, hour=21, minute=59, tzinfo=ZoneInfo("America/Chicago")
     )
-    actual = datetime.datetime.fromisoformat(project["closing_time"])
+    actual = parse_datetime(project["closing_time"])
     assert expected.astimezone(ZoneInfo("UTC")) == actual.astimezone(
         ZoneInfo("UTC")
     ), f"{expected.astimezone(ZoneInfo('UTC'))=} {actual=}"

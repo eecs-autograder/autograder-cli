@@ -31,13 +31,11 @@ cp $test_dir/agproject.yml $test_dir/agproject.expected.yml
 echo "relative" > $test_dir/deadline_cutoff_preference
 cat > $test_dir/modify_step.py <<- EOM
 import argparse
-import datetime
 import json
 import subprocess
 from typing import Any
 from urllib.parse import quote, urljoin
 from urllib.request import urlopen
-from zoneinfo import ZoneInfo
 
 BASE_URL = "http://localhost:9002/"
 
