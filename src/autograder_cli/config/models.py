@@ -5,7 +5,7 @@ import itertools
 from collections.abc import Mapping, Sequence
 from decimal import Decimal
 from pathlib import Path
-from typing import Annotated, Any, Final, Literal, Self, TypeAlias, cast
+from typing import Annotated, Any, Final, Literal, TypeAlias, cast
 from zoneinfo import ZoneInfo
 
 from pydantic import (
@@ -77,7 +77,7 @@ class ProjectConfig(BaseModel):
         return value
 
     @model_validator(mode="after")
-    def set_timezones(self, info: ValidationInfo) -> Self:
+    def set_timezones(self, info: ValidationInfo):
         if not isinstance(info.context, dict):
             return self
 
