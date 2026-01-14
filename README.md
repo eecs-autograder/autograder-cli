@@ -22,7 +22,7 @@ You can check your deployment's version by viewing the API docs at `yourdeployme
 For example, if your deployment is on version `2024.08.0`, replace `<version>` with `2024.08.*`.
 This will install the most recent version of the CLI compatible with Autograder.io `2024.08.0`.
 ```
-pip install --pre autograder-cli==<version>
+pip install autograder-cli==<version>
 ```
 
 ### Obtain API Token
