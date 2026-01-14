@@ -4,7 +4,14 @@ A command-line tool for managing assignments on Autograder.io.
 We also recommend Amir Kamil's [autograder-tools](https://gitlab.eecs.umich.edu/akamil/autograder-tools/tree/master) as a complimentary collection of applications.
 
 ## Announcements
-Version `2024.08.0` is out!
+### Version `2024.08.1` is released
+Fixes:
+- Timezones are now correctly applied to deadlines ([#22](https://github.com/eecs-autograder/autograder-cli/issues/22)).
+
+Dev-facing:
+- Added infrastructure for "save-modify-load" test that allows checking API state directly between saving and loading the YAML config.
+
+### Version `2024.08.0` is out!
 All project configuration options (e.g., core settings, files, tests, handgrading) should be supported in this version.
 Please open an issue to let us know if you spot something we missed.
 
