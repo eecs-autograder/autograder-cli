@@ -26,7 +26,7 @@ pip install autograder-cli==<version>
 ```
 
 ### Obtain API Token
-Visit https://autograder.io/web/__apitoken__ and sign in.
+Visit <https://autograder.io/web/__apitoken__> and sign in.
 Save the file you are prompted to download as `.agtoken` in your home directory or the directory.
 
 Check that you've authenticated correctly with the following command:
