@@ -74,7 +74,18 @@ def _get(url: str):
 
 def _patch(url: str, data: Any):
     subprocess.run(
-        ["ag", "--base_url", BASE_URL, "http", "patch", url, "-j", f"{json.dumps(data)}"],
+        [
+            "ag",
+            "-t",
+            "tests.agtoken",
+            "--base_url",
+            BASE_URL,
+            "http",
+            "patch",
+            url,
+            "-j",
+            f"{json.dumps(data)}",
+        ],
         check=True,
         timeout=5,
     )
