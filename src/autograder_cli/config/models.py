@@ -76,6 +76,30 @@ class ProjectConfig(BaseModel):
 
         return value
 
+    @model_validator(mode="after")
+    def set_timezones(self, info: ValidationInfo):
+        if not isinstance(info.context, dict):
+            return self
+
+        if not info.context.get("read_yaml"):  # type: ignore
+            return self
+
+        if self.settings.deadline is None:
+            return self
+
+        self.settings.deadline.deadline = self.settings.deadline.deadline.replace(
+            tzinfo=self.timezone
+        )
+        match (self.settings.deadline.cutoff_type):
+            case "fixed":
+                self.settings.deadline.cutoff = self.settings.deadline.cutoff.replace(
+                    tzinfo=self.timezone
+                )
+            case "relative" | "none":
+                pass
+
+        return self
+
 
 class CourseSelection(BaseModel):
     name: str
