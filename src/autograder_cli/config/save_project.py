@@ -49,7 +49,7 @@ class _ProjectSaver:
 
     def __init__(self, config_file: str, *, base_url: str, token_file: str):
         with open(config_file) as f:
-            self.config = AGConfig.model_validate(yaml.safe_load(f))
+            self.config = AGConfig.model_validate(yaml.safe_load(f), context={"read_yaml": True})
 
         self.project_config_dir = Path(config_file).parent
 
