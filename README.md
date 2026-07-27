@@ -253,6 +253,12 @@ Install package dependencies and install the autograder-cli as a local editable 
 pip install pip-tools
 ./dev_scripts/install_deps.sh
 ```
+Note: If you get an error about typing_extensions not being installed,
+you can install it manually and then rerun the above command:
+```
+pip install typing-extensions
+./dev_scripts/install_deps.sh
+```
 
 Install [dyff](https://github.com/homeport/dyff) for comparing yaml files in test cases:
 ```
@@ -286,7 +292,7 @@ Python code should be formatted using isort and black.
 ### Tests
 Build and start the local stack as described above, then run the tests with:
 ```
-./dev_scrips/test.sh
+./dev_scripts/test.sh
 ```
 This script does a few preparation steps and then invokes pytest.
 Extra command line arguments to `test.sh` are passed through to pytest, e.g.:
