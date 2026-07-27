@@ -1,5 +1,5 @@
 project:
-  name: Test Project bc958ce92c7d4d3394f1ca1198715957
+  name: Test Project 7cc501433b2e48448c0cb11fd9f9545a
   timezone: America/Chicago
   course:
     name: Test Course
@@ -12,6 +12,5 @@ project:
         - name: Test 1
           cmd: 'true'
           custom_scoring:
-            label: Very label update
-            max_points: 2
-            source: stdout
+            max_points: 4
+            source: stderr

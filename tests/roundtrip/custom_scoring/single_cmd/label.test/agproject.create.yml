@@ -5,7 +5,7 @@ project:
     name: Test Course
     semester: Summer
     year: 2014
-  settings: {}
+  settings:
   test_suites:
     - name: Suite 1
       test_cases:
