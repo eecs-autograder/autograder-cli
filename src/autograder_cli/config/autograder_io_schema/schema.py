@@ -333,6 +333,11 @@ class AGTestCommandResultFeedback(TypedDict):
     stderr_correct: bool | None
     stderr_points: int
     stderr_points_possible: int
+    custom_scoring_used: bool
+    custom_scoring_points: int
+    custom_scoring_points_possible: int
+    custom_scoring_error: str
+    custom_scoring_label: str | None
     total_points: int
     total_points_possible: int
 
@@ -750,6 +755,10 @@ class AGTestCommand(TypedDict):
     expected_stderr_source: Literal['none', 'text', 'instructor_file']
     expected_stderr_text: str
     expected_stderr_instructor_file: InstructorFile | None
+    custom_scoring_source: Literal['none', 'stdout', 'stderr']
+    custom_scoring_regex: str
+    max_points_for_custom_scoring: int
+    custom_scoring_label: str | None
     ignore_case: bool
     ignore_whitespace: bool
     ignore_whitespace_changes: bool
@@ -797,6 +806,10 @@ class CreateAGTestCommand(TypedDict):
     points_for_correct_return_code: NotRequired[int]
     points_for_correct_stdout: NotRequired[int]
     points_for_correct_stderr: NotRequired[int]
+    custom_scoring_source: NotRequired[Literal['none', 'stdout', 'stderr']]
+    custom_scoring_regex: NotRequired[str]
+    max_points_for_custom_scoring: NotRequired[int]
+    custom_scoring_label: NotRequired[str | None]
     deduction_for_wrong_return_code: NotRequired[int]
     deduction_for_wrong_stdout: NotRequired[int]
     deduction_for_wrong_stderr: NotRequired[int]
@@ -837,6 +850,10 @@ class UpdateAGTestCommand(TypedDict):
     points_for_correct_return_code: NotRequired[int]
     points_for_correct_stdout: NotRequired[int]
     points_for_correct_stderr: NotRequired[int]
+    custom_scoring_source: NotRequired[Literal['none', 'stdout', 'stderr']]
+    custom_scoring_regex: NotRequired[str]
+    max_points_for_custom_scoring: NotRequired[int]
+    custom_scoring_label: NotRequired[str | None]
     deduction_for_wrong_return_code: NotRequired[int]
     deduction_for_wrong_stdout: NotRequired[int]
     deduction_for_wrong_stderr: NotRequired[int]

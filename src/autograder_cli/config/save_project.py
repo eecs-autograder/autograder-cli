@@ -495,6 +495,14 @@ class _ProjectSaver:
             "block_process_spawn": test.resources.block_process_spawn,
         }
 
+        if test.custom_scoring is None:
+            body["custom_scoring_source"] = "none"
+        else:
+            body["custom_scoring_source"] = test.custom_scoring.source
+            body["custom_scoring_regex"] = test.custom_scoring.regex
+            body["max_points_for_custom_scoring"] = test.custom_scoring.max_points
+            body["custom_scoring_label"] = test.custom_scoring.label
+
         if test.resources.virtual_memory_limit is not None:
             body["virtual_memory_limit"] = test.resources.virtual_memory_limit
 
