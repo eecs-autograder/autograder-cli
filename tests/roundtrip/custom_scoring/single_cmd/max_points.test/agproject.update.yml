@@ -1,0 +1,16 @@
+project:
+  name: Test Project fa9b8bacab0342b89698fb88b56ab653
+  timezone: America/Chicago
+  course:
+    name: Test Course
+    semester: Summer
+    year: 2014
+  settings:
+  test_suites:
+    - name: Suite 1
+      test_cases:
+        - name: Test 1
+          cmd: 'true'
+          custom_scoring:
+            max_points: 5
+            source: stderr
