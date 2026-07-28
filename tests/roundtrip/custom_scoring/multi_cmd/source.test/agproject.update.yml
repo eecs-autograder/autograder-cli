@@ -1,0 +1,33 @@
+project:
+  name: Test Project 58d6513706b946ccb1eb07ad10d82817
+  timezone: America/Chicago
+  course:
+    name: Test Course
+    semester: Summer
+    year: 2014
+  settings:
+  test_suites:
+    - name: Suite 1
+      test_cases:
+        - name: Multi-cmd Test 1
+          commands:
+            - cmd: 'true'
+              name: 'Cmd 1 stdout to stderr'
+              custom_scoring:
+                max_points: 2
+                source: stderr
+            - cmd: 'true'
+              name: 'Cmd 2 stderr to stdout'
+              custom_scoring:
+                max_points: 3
+                source: stdout
+            - cmd: 'true'
+              name: 'Cmd 3 stderr to stdout'
+              custom_scoring:
+                max_points: 8
+                source: stdout
+            - cmd: 'true'
+              name: 'Cmd 4 stout to stderr'
+              custom_scoring:
+                max_points: 4
+                source: stderr

@@ -1,0 +1,19 @@
+project:
+  name: Test Project bd28b43de74243f4a2e319377a70243c
+  timezone: America/Chicago
+  course:
+    name: Test Course
+    semester: Summer
+    year: 2014
+  settings:
+  test_suites:
+    - name: Suite 1
+      test_cases:
+        - name: Multi-cmd Test 1
+          commands:
+            - cmd: 'true'
+              name: 'Cmd 1'
+            - cmd: 'true'
+              name: 'Cmd 2'
+            - cmd: 'true'
+              name: 'Cmd 3'

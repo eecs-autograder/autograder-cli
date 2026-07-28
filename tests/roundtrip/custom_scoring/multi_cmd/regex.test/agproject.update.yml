@@ -1,0 +1,33 @@
+project:
+  name: Test Project 81d5f9adee574f7190798d7347dcbfaa
+  timezone: America/Chicago
+  course:
+    name: Test Course
+    semester: Summer
+    year: 2014
+  settings:
+  test_suites:
+    - name: Suite 1
+      test_cases:
+        - name: Multi-cmd Test 1
+          commands:
+            - cmd: 'true'
+              name: 'Cmd 1'
+              custom_scoring:
+                max_points: 2
+                source: stderr
+                regex: ragex
+            - cmd: 'true'
+              name: 'Cmd 2'
+              custom_scoring:
+                max_points: 3
+                source: stdout
+                regex: icanhazregexnowplz
+            - cmd: 'true'
+              name: 'Cmd 3'
+            - cmd: 'true'
+              name: 'Cmd 4'
+              custom_scoring:
+                max_points: 4
+                source: stderr
+                regex: r*

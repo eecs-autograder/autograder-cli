@@ -558,6 +558,14 @@ class _ProjectSaver:
             "block_process_spawn": cmd.resources.block_process_spawn,
         }
 
+        if cmd.custom_scoring is None:
+            body["custom_scoring_source"] = "none"
+        else:
+            body["custom_scoring_source"] = cmd.custom_scoring.source
+            body["custom_scoring_regex"] = cmd.custom_scoring.regex
+            body["max_points_for_custom_scoring"] = cmd.custom_scoring.max_points
+            body["custom_scoring_label"] = cmd.custom_scoring.label
+
         if cmd.resources.virtual_memory_limit is not None:
             body["virtual_memory_limit"] = cmd.resources.virtual_memory_limit
 

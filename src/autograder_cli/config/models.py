@@ -473,6 +473,16 @@ def _test_case_from_api(data: ag_schema.AGTestCase):
                         ignore_whitespace_changes=cmd["ignore_whitespace_changes"],
                         ignore_blank_lines=cmd["ignore_blank_lines"],
                     ),
+                    custom_scoring=(
+                        None
+                        if cmd["custom_scoring_source"] == "none"
+                        else CustomScoringCmdSettings(
+                            source=cmd["custom_scoring_source"],
+                            regex=cmd["custom_scoring_regex"],
+                            max_points=cmd["max_points_for_custom_scoring"],
+                            label=cmd["custom_scoring_label"],
+                        )
+                    ),
                     feedback=TestCommandFeedbackSettings(
                         normal=_cmd_fdbk_dict_to_preset(cmd["normal_fdbk_config"]),
                         first_failed_test=(
