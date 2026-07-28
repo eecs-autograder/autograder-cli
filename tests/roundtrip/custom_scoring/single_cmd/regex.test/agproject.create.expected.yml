@@ -1,0 +1,17 @@
+project:
+  name: Test Project 5a37271970fa4113b0981a7b6ce52103
+  timezone: America/Chicago
+  course:
+    name: Test Course
+    semester: Summer
+    year: 2014
+  settings: {}
+  test_suites:
+    - name: Suite 1
+      test_cases:
+        - name: Test 1
+          cmd: 'true'
+          custom_scoring:
+            max_points: 1
+            source: stderr
+            regex: "some very regular regex"
