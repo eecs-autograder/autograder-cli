@@ -4,6 +4,10 @@ A command-line tool for managing assignments on Autograder.io.
 We also recommend Amir Kamil's [autograder-tools](https://gitlab.eecs.umich.edu/akamil/autograder-tools/tree/master) as a complimentary collection of applications.
 
 ## Announcements
+
+### Version `2025.08.0`
+Adds support for [custom scoring](https://github.com/eecs-autograder/autograder.io/issues/62).
+
 ### Version `2024.08.1` is released
 Fixes:
 - Timezones are now correctly applied to deadlines ([#22](https://github.com/eecs-autograder/autograder-cli/issues/22)).
@@ -211,9 +215,6 @@ After the squashed feature/bugfix branch is merged into a release branch, cherry
 
 Release branches should keep the corresponding `autograder-server` submodule release branch up to date.
 Follow the same protocol as for the `develop` branch.
-
-For the first release of this library (2024.8), there will be a time period of adding features to the release branch until we support all project configuration options.
-At time of writing, handgrading options are the main missing piece.
 
 The version of `README.md` (this file) on the `develop` branch is the source of truth.
 Update this file on release branches just before publishing a release.
