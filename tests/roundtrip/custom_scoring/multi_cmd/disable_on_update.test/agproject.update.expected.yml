@@ -1,0 +1,22 @@
+project:
+  name: Test Project 0a55b7d3d4904f2386a6cb387fd71eef
+  timezone: America/Chicago
+  course:
+    name: Test Course
+    semester: Summer
+    year: 2014
+  settings: {}
+  test_suites:
+    - name: Suite 1
+      test_cases:
+        - name: Multi-cmd Test 1
+          commands:
+            - cmd: 'true'
+              name: 'Cmd 1'
+            - cmd: 'true'
+              name: 'Cmd 2'
+              custom_scoring:
+                max_points: 42
+                source: stdout
+            - cmd: 'true'
+              name: 'Cmd 3'

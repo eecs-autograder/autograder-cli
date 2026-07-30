@@ -1,0 +1,18 @@
+project:
+  name: Test Project 0a7e92741beb440a98daeb1c065c1d91
+  timezone: America/Chicago
+  course:
+    name: Test Course
+    semester: Summer
+    year: 2014
+  settings: {}
+  test_suites:
+    - name: Suite 1
+      test_cases:
+        - name: Test 1
+          cmd: 'true'
+          custom_scoring:
+            max_points: 1
+            source: stdout
+            label: set the label
+            regex: weeee regex

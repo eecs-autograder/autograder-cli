@@ -1,22 +1,35 @@
 name: ag-cli-test-stack
 services:
+  nginx:
+    build: ./nginx
+    restart: unless-stopped
+    ports:
+      # IMPORTANT: Do not change this port. Tests and CI depend on it.
+      - "9002:80"
+    volumes:
+      - ./nginx/conf.d:/etc/nginx/conf.d
+      # So that the ./autograder-server/media_root_dev can be
+      # deleted at will, we mount the whole autograder-server directory
+      # and symlink /protected inside the container to point to
+      # autograder-server/media_root_dev
+      - ./autograder-server:/autograder-server
+
   django:
     restart: unless-stopped
     build:
       context: ./autograder-server
       dockerfile: Dockerfile-django-dev
-    ports:
-      # IMPORTANT: Do not change this port. Tests and CI depend on it.
-      - "9002:9002"
     volumes:
       - ./autograder-server:/usr/src/app
     # IMPORTANT: Do not change this port. Tests and CI depend on it.
     command: >-
-      python3 manage.py runserver 0.0.0.0:9002
+      python3 manage.py runserver 0.0.0.0:8000
 
     env_file:
       - ./autograder-server/_dev.env
     environment:
+      USE_NGINX_X_ACCEL: 'true'
+
       # Set to false to disable real authentication. Any other string value
       # will enable real authentication.
       # Then, using a browser plugin such as EditThisCookie, set the
@@ -26,7 +39,7 @@ services:
 
   postgres:
     restart: unless-stopped
-    image: postgres:13
+    image: postgres:14
     expose:
       - "5432"
     command: postgres
