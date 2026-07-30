@@ -25,9 +25,7 @@ jobs:
 
     - name: Install package dependencies
       run: |
-        pip install pip-tools
-        pip install --upgrade typing-extensions
-        pip-sync requirements.txt requirements-dev.txt
+        ./dev_scripts/install_deps.sh
 
     - name: Lint
       run: ./dev_scripts/lint.sh
@@ -54,7 +52,7 @@ jobs:
       run: ./dev_scripts/local_stack.sh init
 
     - name: Install Dependencies and Local CLI Package
-      run: ./dev_scripts/install_deps.sh
+      run: ./dev_scripts/install.sh
 
     - name: Install dyff
       run: curl --silent --location https://git.io/JYfAY | bash

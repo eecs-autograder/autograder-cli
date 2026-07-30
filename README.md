@@ -251,13 +251,13 @@ source venv/bin/activate
 Install package dependencies and install the autograder-cli as a local editable package:
 ```
 pip install pip-tools
-./dev_scripts/install_deps.sh
+./dev_scripts/install_local.sh
 ```
 Note: If you get an error about typing_extensions not being installed,
 you can install it manually and then rerun the above command:
 ```
 pip install typing-extensions
-./dev_scripts/install_deps.sh
+./dev_scripts/install_local.sh
 ```
 
 Install [dyff](https://github.com/homeport/dyff) for comparing yaml files in test cases:
