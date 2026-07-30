@@ -223,7 +223,7 @@ If instructions differ across releases, include both, and label which version th
 To create a github release, tag the latest commit on the release branch.
 For example, to create the first non-dev 2024.8 release, we'd run:
 ```
-git checkout release-2024.08.x
+git checkout -b release-2024.08.x
 git tag 2024.8.0
 git push --tags
 ```
@@ -275,7 +275,7 @@ Build and start the stack:
 
 Generate the gpg secrets for the autograder-server stack:
 ```
-python -m pip install Django==3.1 python-gnupg
+python -m pip install Django python-gnupg
 cd tests/local_stack/autograder-server && python3 generate_secrets.py
 cd -
 ```
