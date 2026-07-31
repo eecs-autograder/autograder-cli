@@ -88,6 +88,7 @@ class _ProjectSaver:
             )
             | self._make_legacy_project_api_dict()
         )
+        request_body["timezone"] = self.config.project.timezone.key
         do_patch(self.client, f"/api/projects/{self.project_pk}/", request_body, ag_schema.Project)
         print("Project settings updated")
 
@@ -99,23 +100,24 @@ class _ProjectSaver:
         self._save_handgrading_config()
 
     def _make_legacy_project_api_dict(self) -> ag_schema.UpdateProject:
-        result: ag_schema.UpdateProject = {
-            "submission_limit_reset_timezone": self.config.project.timezone.key
-        }
         match (self.config.project.settings.deadline):
             case DeadlineWithRelativeCutoff(deadline=deadline, cutoff=cutoff):
-                result["soft_closing_time"] = deadline.isoformat()
-                result["closing_time"] = (deadline + cutoff).isoformat()
+                return {
+                    "soft_closing_time": deadline.isoformat(),
+                    "closing_time": (deadline + cutoff).isoformat(),
+                }
             case DeadlineWithFixedCutoff(deadline=deadline, cutoff=cutoff):
-                result["soft_closing_time"] = deadline.isoformat()
-                result["closing_time"] = cutoff.isoformat()
+                return {
+                    "soft_closing_time": deadline.isoformat(),
+                    "closing_time": cutoff.isoformat(),
+                }
             case DeadlineWithNoCutoff(deadline=deadline):
-                result["soft_closing_time"] = deadline.isoformat()
-                result["closing_time"] = None
+                return {
+                    "soft_closing_time": deadline.isoformat(),
+                    "closing_time": None,
+                }
             case None:
-                pass
-
-        return result
+                return {}
 
     def _save_expected_student_files(self):
         assert self.project_pk is not None
@@ -823,7 +825,6 @@ class _ProjectSaver:
                     "hint_limit_reset_time": (
                         suite_config.hint_options.daily_limit_reset_time.isoformat()
                     ),
-                    "hint_limit_reset_timezone": self.config.project.timezone.key,
                     "num_hints_per_submission": (
                         suite_config.hint_options.hint_limit_per_submission
                     ),
