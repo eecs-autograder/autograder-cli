@@ -23,7 +23,6 @@ def write_yaml(config: AGConfig, filename: str, *, exclude_defaults: bool):
                         "settings": {
                             "soft_closing_time",
                             "closing_time",
-                            "submission_limit_reset_timezone",
                             "send_email_on_submission_received",
                             "send_email_on_non_deferred_tests_finished",
                             "use_honor_pledge",

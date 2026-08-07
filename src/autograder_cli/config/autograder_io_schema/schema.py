@@ -4,7 +4,7 @@
 from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
-from typing import Any, Literal
+from typing import Any, Literal, TypedDict
 
 from typing_extensions import NotRequired, TypedDict
 
@@ -52,6 +52,7 @@ Semester = Literal['Fall', 'Winter', 'Spring', 'Summer']
 class CreateProject(TypedDict):
     name: str
     visible_to_students: NotRequired[bool]
+    timezone: NotRequired[str]
     closing_time: NotRequired[str | None]
     soft_closing_time: NotRequired[str | None]
     disallow_student_submissions: NotRequired[bool]
@@ -63,7 +64,6 @@ class CreateProject(TypedDict):
     allow_submissions_past_limit: NotRequired[bool]
     groups_combine_daily_submissions: NotRequired[bool]
     submission_limit_reset_time: NotRequired[str]
-    submission_limit_reset_timezone: NotRequired[str]
     num_bonus_submissions: NotRequired[int]
     total_submission_limit: NotRequired[int | None]
     allow_late_days: NotRequired[bool]
@@ -78,6 +78,7 @@ class CreateProject(TypedDict):
 class UpdateProject(TypedDict):
     name: NotRequired[str]
     visible_to_students: NotRequired[bool]
+    timezone: NotRequired[str]
     closing_time: NotRequired[str | None]
     soft_closing_time: NotRequired[str | None]
     disallow_student_submissions: NotRequired[bool]
@@ -89,7 +90,6 @@ class UpdateProject(TypedDict):
     allow_submissions_past_limit: NotRequired[bool]
     groups_combine_daily_submissions: NotRequired[bool]
     submission_limit_reset_time: NotRequired[str]
-    submission_limit_reset_timezone: NotRequired[str]
     num_bonus_submissions: NotRequired[int]
     total_submission_limit: NotRequired[int | None]
     allow_late_days: NotRequired[bool]
@@ -508,7 +508,6 @@ class MutationTestSuiteHintConfig(TypedDict):
     hints_by_mutant_name: Mapping[str, Any]
     num_hints_per_day: int | None
     hint_limit_reset_time: str
-    hint_limit_reset_timezone: str
     num_hints_per_submission: int | None
     obfuscate_mutant_names: Literal['none', 'sequential', 'hash']
     obfuscated_mutant_name_prefix: str
@@ -520,7 +519,6 @@ class CreateMutationTestSuiteHintConfig(TypedDict):
     hints_by_mutant_name: NotRequired[Mapping[str, Any]]
     num_hints_per_day: NotRequired[int | None]
     hint_limit_reset_time: NotRequired[str]
-    hint_limit_reset_timezone: NotRequired[str]
     num_hints_per_submission: NotRequired[int | None]
     obfuscate_mutant_names: NotRequired[Literal['none', 'sequential', 'hash']]
     obfuscated_mutant_name_prefix: NotRequired[str]
@@ -530,7 +528,6 @@ class UpdateMutationTestSuiteHintConfig(TypedDict):
     hints_by_mutant_name: NotRequired[Mapping[str, Any]]
     num_hints_per_day: NotRequired[int | None]
     hint_limit_reset_time: NotRequired[str]
-    hint_limit_reset_timezone: NotRequired[str]
     num_hints_per_submission: NotRequired[int | None]
     obfuscate_mutant_names: NotRequired[Literal['none', 'sequential', 'hash']]
     obfuscated_mutant_name_prefix: NotRequired[str]
@@ -564,6 +561,7 @@ class Project(TypedDict):
     last_modified: str
     course: int
     visible_to_students: bool
+    timezone: str
     closing_time: NotRequired[str | None]
     soft_closing_time: str | None
     disallow_student_submissions: bool
@@ -575,7 +573,6 @@ class Project(TypedDict):
     allow_submissions_past_limit: bool
     groups_combine_daily_submissions: bool
     submission_limit_reset_time: str
-    submission_limit_reset_timezone: str
     num_bonus_submissions: int
     total_submission_limit: int | None
     allow_late_days: bool

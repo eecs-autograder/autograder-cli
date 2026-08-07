@@ -82,7 +82,7 @@ def load_project(
         )
         project_data["ultimate_submission_policy"] = "best"
 
-    timezone = validate_timezone(project_data["submission_limit_reset_timezone"])
+    timezone = validate_timezone(project_data["timezone"])
 
     settings = ProjectSettings(
         _timezone=timezone,
