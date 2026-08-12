@@ -360,8 +360,7 @@ If you plan on updating the existing project from which you downloaded this conf
 this might cause unexpected behaviors like extra commands being created.
 In that scenario, please delete the extra command through the web interface.
 In general, we recommend using the repeat feature to create many similar
-tests with the CLI.""".strip()
-            )
+tests with the CLI.""".strip())
         return SingleCmdTestCaseConfig(
             name=data["name"],
             type="single_cmd",
