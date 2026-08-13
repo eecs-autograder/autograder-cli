@@ -5,6 +5,12 @@ We also recommend Amir Kamil's [autograder-tools](https://gitlab.eecs.umich.edu/
 
 ## Announcements
 
+### Version `2026.08.0`
+The main change in this version is that the API now treats timezones more like how the CLI does (each project specifies its timezone explicitly).
+This version of the CLI adds compatibility for that API change.
+
+See [the project page](https://github.com/orgs/eecs-autograder/projects/11/views/1) for a full list of completed tasks.
+
 ### Version `2025.08.0`
 Adds support for [custom scoring](https://github.com/eecs-autograder/autograder.io/issues/62).
 
