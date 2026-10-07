@@ -350,8 +350,19 @@ def _test_case_from_api(data: ag_schema.AGTestCase):
         )
     elif num_cmds == 1:
         cmd = data["ag_test_commands"][0]
+        if cmd["name"] != data["name"]:
+            print(f"""
+***WARNING***: Mismatch between single-command test \
+"{data["name"]}"'s name and underlying command name.
+This probably means it was created by cloning another test case.
+If you'll be creating a new project from this config, everything should work fine.
+If you plan on updating the existing project from which you downloaded this config,
+this might cause unexpected behaviors like extra commands being created.
+In that scenario, please delete the extra command through the web interface.
+In general, we recommend using the repeat feature to create many similar
+tests with the CLI.""".strip())
         return SingleCmdTestCaseConfig(
-            name=cmd["name"],
+            name=data["name"],
             type="single_cmd",
             internal_admin_notes=cmd["internal_admin_notes"],
             staff_description=cmd["staff_description"],
